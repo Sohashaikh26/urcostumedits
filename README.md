@@ -69,9 +69,9 @@ The business owner receives the order notification through email.
 
 ---
 
-## 📱 Instagram
+##  Instagram
 
-@urcostumedits
+@_urcostumedits_
 
 ---
 
