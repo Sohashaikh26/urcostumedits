@@ -1,0 +1,7 @@
+
+{% extends "base.html" %}{% block content %}
+<section class="center-page"><div class="message-card">
+<h1>Order placed 💗</h1><p>Thank you, {{ name }}! Your order is saved successfully. UrCostome Edit will contact you soon.</p>
+<a class="btn primary" href="{{ url_for('products') }}">Back to Products</a>
+</div></section>
+{% endblock %}

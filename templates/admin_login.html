@@ -1,0 +1,9 @@
+
+{% extends "base.html" %}{% block content %}
+<section class="center-page"><div class="message-card admin-login">
+<h1>Admin Login</h1><p>Enter your owner PIN to open order dashboard.</p>
+<form onsubmit="event.preventDefault(); location.href='/admin?pin=' + document.getElementById('pin').value;">
+<input id="pin" type="password" placeholder="Enter PIN" required><button class="btn primary" type="submit">Open Dashboard</button>
+</form><small>Default PIN: 1234</small>
+</div></section>
+{% endblock %}

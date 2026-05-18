@@ -1,0 +1,18 @@
+
+{% extends "base.html" %}{% block content %}
+<main class="home-screen">
+<section class="hero-card">
+<div class="hero-text fade-up">
+<p class="eyebrow">handmade • customised • aesthetic</p>
+<h1>Personalised crochet gifts made with love.</h1>
+<p class="subtext">UrCostome Edit creates cute handmade crochet keychains and customised gifts for bags, pouches, birthdays, besties, hampers and bulk gifting.</p>
+<div class="actions"><a class="btn primary" href="{{ url_for('products') }}">Shop Collection</a><a class="btn outline" href="https://instagram.com/_urcostumedits_" target="_blank">@_urcostumedits_</a></div>
+<div class="trust-row"><span>Custom colours</span><span>Bulk orders</span><span>Gift packing</span></div>
+</div>
+<div class="hero-visual float">
+<img class="hero-main" src="{{ url_for('static', filename='images/bow.jpeg') }}">
+<img class="hero-small one" src="{{ url_for('static', filename='images/heart.jpeg') }}">
+<img class="hero-small two" src="{{ url_for('static', filename='images/evil-eye.jpeg') }}">
+</div>
+</section></main>
+{% endblock %}

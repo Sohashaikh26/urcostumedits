@@ -1,0 +1,13 @@
+
+{% extends "base.html" %}{% block content %}
+<section class="page">
+<div class="page-title"><p class="eyebrow">shop handmade</p><h1>Our Collection</h1><p>Click any product to view details, customisation criteria and place an order.</p></div>
+<div class="product-grid">
+{% for p in products %}
+<a class="product-card" href="{{ url_for('product', pid=p.id) }}">
+<img src="{{ url_for('static', filename='images/' + p.image) }}">
+<div class="product-info"><h2>{{ p.name }}</h2><p>{{ p.description }}</p><div class="price-row"><b>{{ p.price }}</b><span>View details</span></div></div>
+</a>
+{% endfor %}
+</div></section>
+{% endblock %}

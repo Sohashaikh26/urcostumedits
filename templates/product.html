@@ -1,0 +1,19 @@
+
+{% extends "base.html" %}{% block content %}
+<section class="detail-page">
+<a class="back" href="{{ url_for('products') }}">← Back to collection</a>
+<div class="detail-card">
+<div class="detail-image"><img src="{{ url_for('static', filename='images/' + p.image) }}"></div>
+<div class="detail-info">
+<p class="eyebrow">custom handmade</p><h1>{{ p.name }}</h1><p class="desc">{{ p.description }}</p><h2>{{ p.price }}</h2>
+<div class="criteria"><h3>Customisation Criteria</h3><ul>{% for item in p.criteria %}<li>{{ item }}</li>{% endfor %}</ul></div>
+<p class="best"><b>Best for:</b> {{ p.best_for }}</p>
+<form class="order-form" action="{{ url_for('order') }}" method="POST">
+<h3>Place Order</h3><input type="hidden" name="product" value="{{ p.name }}">
+<input name="customer_name" placeholder="Your name" required>
+<input name="contact" placeholder="Phone number / Instagram ID" required>
+<input type="number" name="quantity" placeholder="Quantity" min="1" required>
+<textarea name="details" placeholder="Mention colour, alphabet/name, date needed, delivery area, etc." required></textarea>
+<button class="btn primary" type="submit">Submit Order</button>
+</form></div></div></section>
+{% endblock %}
