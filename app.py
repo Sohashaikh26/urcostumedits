@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3, os
 from datetime import datetime
@@ -16,14 +15,22 @@ PRODUCTS = [
 ]
 
 def init_db():
-    con=sqlite3.connect(DB)
+    con = sqlite3.connect(DB)
     con.execute("""CREATE TABLE IF NOT EXISTS orders(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT, customer_name TEXT,
-        contact TEXT, product TEXT, quantity INTEGER, details TEXT, status TEXT DEFAULT 'New')""")
-    con.commit(); con.close()
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_at TEXT,
+        customer_name TEXT,
+        contact TEXT,
+        product TEXT,
+        quantity INTEGER,
+        details TEXT,
+        status TEXT DEFAULT 'New'
+    )""")
+    con.commit()
+    con.close()
 
 def find_product(pid):
-    return next((p for p in PRODUCTS if p["id"]==pid), None)
+    return next((p for p in PRODUCTS if p["id"] == pid), None)
 
 @app.route("/")
 def home():
@@ -35,41 +42,90 @@ def products():
 
 @app.route("/product/<pid>")
 def product(pid):
-    p=find_product(pid)
-    if not p: return "Product not found",404
+    p = find_product(pid)
+    if not p:
+        return "Product not found", 404
     return render_template("product.html", p=p)
+
+@app.route("/cart")
+def cart():
+    return render_template("cart.html")
 
 @app.route("/order", methods=["POST"])
 def order():
-    con=sqlite3.connect(DB)
-    con.execute("INSERT INTO orders(created_at,customer_name,contact,product,quantity,details) VALUES(?,?,?,?,?,?)",
-        (datetime.now().strftime("%d %b %Y, %I:%M %p"), request.form["customer_name"], request.form["contact"],
-         request.form["product"], int(request.form["quantity"]), request.form["details"]))
-    con.commit(); con.close()
-    return render_template("thankyou.html", name=request.form["customer_name"])
+    con = sqlite3.connect(DB)
+    cur = con.cursor()
+
+    cur.execute(
+        "INSERT INTO orders(created_at, customer_name, contact, product, quantity, details) VALUES(?,?,?,?,?,?)",
+        (
+            datetime.now().strftime("%d %b %Y, %I:%M %p"),
+            request.form["customer_name"],
+            request.form["contact"],
+            request.form["product"],
+            int(request.form["quantity"]),
+            request.form["details"]
+        )
+    )
+
+    order_id = cur.lastrowid
+    con.commit()
+    con.close()
+
+    return render_template(
+        "thankyou.html",
+        name=request.form["customer_name"],
+        order_id=order_id
+    )
+
+@app.route("/track", methods=["GET", "POST"])
+def track():
+    order = None
+
+    if request.method == "POST":
+        order_id = request.form.get("order_id")
+
+        con = sqlite3.connect(DB)
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+        cur.execute("SELECT * FROM orders WHERE id=?", (order_id,))
+        order = cur.fetchone()
+        con.close()
+
+    return render_template("track.html", order=order)
 
 @app.route("/admin")
 def admin():
-    pin=request.args.get("pin","")
+    pin = request.args.get("pin", "")
     if pin != ADMIN_PIN:
         return render_template("admin_login.html")
-    con=sqlite3.connect(DB); con.row_factory=sqlite3.Row
-    orders=con.execute("SELECT * FROM orders ORDER BY id DESC").fetchall()
+
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    orders = con.execute("SELECT * FROM orders ORDER BY id DESC").fetchall()
     con.close()
-    return render_template("admin.html", orders=orders, pin=pin,
+
+    return render_template(
+        "admin.html",
+        orders=orders,
+        pin=pin,
         total=len(orders),
-        new=sum(1 for o in orders if o["status"]=="New"),
-        making=sum(1 for o in orders if o["status"]=="Making"),
-        ready=sum(1 for o in orders if o["status"]=="Ready"))
+        new=sum(1 for o in orders if o["status"] == "New"),
+        making=sum(1 for o in orders if o["status"] == "Making"),
+        ready=sum(1 for o in orders if o["status"] == "Ready")
+    )
 
 @app.route("/admin/update/<int:oid>", methods=["POST"])
 def update_order(oid):
-    pin=request.args.get("pin","")
-    con=sqlite3.connect(DB)
+    pin = request.args.get("pin", "")
+
+    con = sqlite3.connect(DB)
     con.execute("UPDATE orders SET status=? WHERE id=?", (request.form["status"], oid))
-    con.commit(); con.close()
+    con.commit()
+    con.close()
+
     return redirect(url_for("admin", pin=pin))
 
-if __name__=="__main__":
+if __name__ == "__main__":
     init_db()
     app.run(debug=True)

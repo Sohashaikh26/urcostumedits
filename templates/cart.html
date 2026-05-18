@@ -1,0 +1,76 @@
+
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page">
+  <div class="page-title">
+    <p class="eyebrow">your selected items</p>
+    <h1>Your Cart</h1>
+    <p>Review your items and place your order.</p>
+  </div>
+
+  <div class="message-card" id="cartBox"></div>
+</section>
+
+<script>
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let cartBox = document.getElementById("cartBox");
+
+function showCart() {
+  if (cart.length === 0) {
+    cartBox.innerHTML = `
+      <h2>Your cart is empty</h2>
+      <br>
+      <a class="btn primary" href="/products">Shop Products</a>
+    `;
+    return;
+  }
+
+  let itemsHTML = cart.map((item, index) => `
+    <div class="details-box">
+      <h3>${item.name}</h3>
+      <p>${item.price}</p>
+      <p>Quantity: ${item.quantity}</p>
+      <button class="btn outline" onclick="removeItem(${index})">Remove</button>
+    </div>
+  `).join("");
+
+  let productNames = cart.map(item => `${item.name} x ${item.quantity}`).join(", ");
+
+  cartBox.innerHTML = `
+    ${itemsHTML}
+
+    <form class="order-form" action="/order" method="POST" onsubmit="clearCart()">
+      <h3>Checkout</h3>
+
+      <input type="hidden" name="product" value="${productNames}">
+      <input type="hidden" name="quantity" value="${cart.length}">
+
+      <input name="customer_name" placeholder="Your name" required>
+      <input name="contact" placeholder="Phone number / Instagram ID" required>
+      <textarea name="details" placeholder="Mention colours, alphabets, date needed, delivery area, etc." required></textarea>
+
+      <p>
+        Handmade custom orders are confirmed before payment.
+        We will contact you for final customisation and payment confirmation.
+      </p>
+
+      <button class="btn primary" type="submit">Place Cart Order</button>
+    </form>
+  `;
+}
+
+function removeItem(index) {
+  cart.splice(index, 1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  showCart();
+}
+
+function clearCart() {
+  localStorage.removeItem("cart");
+}
+
+showCart();
+</script>
+
+{% endblock %}

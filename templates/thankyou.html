@@ -1,7 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
 
-{% extends "base.html" %}{% block content %}
-<section class="center-page"><div class="message-card">
-<h1>Order placed 💗</h1><p>Thank you, {{ name }}! Your order is saved successfully. UrCostome Edit will contact you soon.</p>
-<a class="btn primary" href="{{ url_for('products') }}">Back to Products</a>
-</div></section>
+<section class="center-page">
+  <div class="message-card">
+    <h1>Order placed 💗</h1>
+
+    <p>Thank you, {{ name }}! Your order is saved successfully.</p>
+
+    <h2>Your Order ID is: #{{ order_id }}</h2>
+
+    <p>Please save this Order ID to track your order status.</p>
+
+    <a class="btn primary" href="{{ url_for('track') }}">Track Order</a>
+    <a class="btn outline" href="{{ url_for('products') }}">Back to Products</a>
+  </div>
+</section>
+
 {% endblock %}

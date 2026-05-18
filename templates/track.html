@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="center-page">
+  <div class="message-card">
+    <h1>Track Your Order</h1>
+    <p>Enter your Order ID to check your order status.</p>
+
+    <form method="POST" class="order-form">
+      <input type="number" name="order_id" placeholder="Enter Order ID" required>
+      <button class="btn primary" type="submit">Track Order</button>
+    </form>
+
+    {% if order %}
+      <div class="details-box">
+        <h3>Order #{{ order.id }}</h3>
+        <p><b>Name:</b> {{ order.customer_name }}</p>
+        <p><b>Product:</b> {{ order.product }}</p>
+        <p><b>Status:</b> {{ order.status }}</p>
+      </div>
+    {% elif request.method == "POST" %}
+      <p>No order found with this ID.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}
