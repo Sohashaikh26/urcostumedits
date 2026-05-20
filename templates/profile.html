@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+{% block title %}My Profile — UrCostome Edit{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════
+   PROFILE LAYOUT
+═══════════════════════════════════════ */
+.profile-page {
+  max-width: 1100px; margin: 0 auto;
+  padding: 48px clamp(16px,4vw,40px) 80px;
+}
+
+/* ── Profile Header ── */
+.profile-header {
+  background: linear-gradient(135deg, var(--brown) 0%, var(--brown-d) 100%);
+  border-radius: var(--r-xl); padding: 36px 40px;
+  display: flex; align-items: center; gap: 28px;
+  margin-bottom: 32px; position: relative; overflow: hidden;
+}
+.profile-header::before {
+  content: '🧶';
+  position: absolute; right: 40px; top: 50%; transform: translateY(-50%);
+  font-size: 100px; opacity: .06; pointer-events: none;
+}
+.profile-avatar-big {
+  width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--rose), var(--rose-d));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 700; color: #fff;
+  border: 4px solid rgba(255,255,255,.2);
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+.profile-header-info { flex: 1; }
+.profile-header-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.7rem; color: #fff; margin-bottom: 4px;
+}
+.profile-header-email { font-size: .88rem; color: rgba(255,255,255,.6); margin-bottom: 12px; }
+.profile-header-stats {
+  display: flex; gap: 24px; flex-wrap: wrap;
+}
+.ph-stat { text-align: center; }
+.ph-stat .ph-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 700; color: #fff; display: block;
+}
+.ph-stat .ph-label { font-size: .72rem; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .06em; }
+
+/* ── Tab Nav ── */
+.profile-tabs {
+  display: flex; gap: 4px; background: var(--white);
+  border: 1px solid var(--border); border-radius: var(--r-l);
+  padding: 6px; margin-bottom: 28px;
+  box-shadow: var(--shadow-s);
+  overflow-x: auto;
+}
+.ptab {
+  flex: 1; min-width: 120px; padding: 11px 16px;
+  border: none; background: transparent; border-radius: 10px;
+  font-family: 'DM Sans', sans-serif; font-size: .85rem;
+  font-weight: 500; color: var(--muted); cursor: pointer;
+  transition: background .2s, color .2s;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  white-space: nowrap;
+}
+.ptab:hover { background: var(--warm); color: var(--brown); }
+.ptab.active { background: var(--brown); color: #fff; font-weight: 600; }
+.ptab .tab-badge {
+  background: var(--rose); color: #fff;
+  font-size: .65rem; font-weight: 700; padding: 1px 6px;
+  border-radius: 10px; min-width: 18px; text-align: center;
+}
+.ptab.active .tab-badge { background: rgba(255,255,255,.25); }
+
+/* ── Pane ── */
+.ptab-pane { display: none; animation: fadeUp .35s ease; }
+.ptab-pane.active { display: block; }
+
+/* ═══════════════════════════════════════
+   ORDERS TAB
+═══════════════════════════════════════ */
+.orders-filter-row {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.of-btn {
+  padding: 7px 16px; border-radius: 20px; font-size: .8rem; font-weight: 600;
+  border: 1.5px solid var(--border); background: var(--white); color: var(--muted);
+  cursor: pointer; transition: all .2s;
+}
+.of-btn:hover  { border-color: var(--brown); color: var(--brown); }
+.of-btn.active { background: var(--brown); color: #fff; border-color: var(--brown); }
+
+.orders-list { display: flex; flex-direction: column; gap: 14px; }
+
+.order-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-l); overflow: hidden;
+  transition: box-shadow .2s, transform .2s;
+}
+.order-card:hover { box-shadow: var(--shadow-m); transform: translateY(-2px); }
+
+.order-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+  padding: 16px 20px; background: var(--warm);
+  border-bottom: 1px solid var(--border);
+}
+.oc-id { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--brown); font-weight: 600; }
+.oc-date { font-size: .78rem; color: var(--muted); }
+.oc-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 20px;
+  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+}
+
+.order-card-body {
+  display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+  flex-wrap: wrap;
+}
+.oc-img {
+  width: 56px; height: 56px; border-radius: 10px; overflow: hidden;
+  background: var(--warm); flex-shrink: 0;
+}
+.oc-img img { width: 100%; height: 100%; object-fit: cover; }
+.oc-info { flex: 1; }
+.oc-product { font-weight: 600; font-size: .9rem; color: var(--brown); margin-bottom: 3px; }
+.oc-meta { font-size: .78rem; color: var(--muted); }
+.oc-details { font-size: .78rem; color: var(--text); margin-top: 3px; }
+.oc-total { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--brown); }
+
+.order-card-footer {
+  display: flex; gap: 8px; padding: 12px 20px;
+  border-top: 1px solid var(--border); background: #fdfaf8; flex-wrap: wrap;
+}
+.oc-action {
+  padding: 7px 14px; border-radius: 8px; font-size: .78rem; font-weight: 600;
+  border: none; cursor: pointer; transition: all .2s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 5px; font-family: 'DM Sans', sans-serif;
+}
+.oca-track  { background: var(--rose-l); color: var(--rose-d); }
+.oca-track:hover  { background: var(--rose); color: #fff; }
+.oca-reorder { background: var(--warm); color: var(--brown); }
+.oca-reorder:hover { background: var(--border); }
+.oca-wa { background: #e7f8ef; color: #166534; }
+.oca-wa:hover { background: #25d366; color: #fff; }
+
+/* Empty orders */
+.no-orders {
+  text-align: center; padding: 60px 20px;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+}
+.no-orders .no-icon { font-size: 2.5rem; margin-bottom: 14px; }
+.no-orders h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--brown); margin-bottom: 6px; }
+.no-orders p  { font-size: .87rem; color: var(--muted); margin-bottom: 24px; }
+
+/* ═══════════════════════════════════════
+   WISHLIST TAB
+═══════════════════════════════════════ */
+.wishlist-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px;
+}
+.wl-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-l); overflow: hidden;
+  transition: box-shadow .2s, transform .2s;
+  text-decoration: none; color: inherit;
+}
+.wl-card:hover { box-shadow: var(--shadow-m); transform: translateY(-4px); }
+.wl-img { aspect-ratio: 1; overflow: hidden; background: var(--warm); position: relative; }
+.wl-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+.wl-card:hover .wl-img img { transform: scale(1.07); }
+.wl-remove {
+  position: absolute; top: 8px; right: 8px; width: 28px; height: 28px;
+  border-radius: 50%; background: rgba(255,255,255,.9); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: .8rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1); transition: background .2s, transform .2s;
+  color: var(--rose); z-index: 2;
+}
+.wl-remove:hover { background: #fff1f2; transform: scale(1.15); }
+.wl-body { padding: 12px 14px; }
+.wl-name { font-family: 'Playfair Display', serif; font-size: .92rem; color: var(--brown); margin-bottom: 4px; }
+.wl-price { font-size: .84rem; font-weight: 700; color: var(--rose); margin-bottom: 10px; }
+.wl-order-btn {
+  width: 100%; padding: 8px; background: var(--rose); color: #fff;
+  border: none; border-radius: 8px; font-size: .78rem; font-weight: 600;
+  cursor: pointer; transition: background .2s; font-family: 'DM Sans', sans-serif;
+}
+.wl-order-btn:hover { background: var(--rose-d); }
+
+.no-wishlist {
+  text-align: center; padding: 60px 20px;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-xl); grid-column: 1/-1;
+}
+.no-wishlist .no-icon { font-size: 2.5rem; margin-bottom: 14px; }
+.no-wishlist h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--brown); margin-bottom: 6px; }
+.no-wishlist p  { font-size: .87rem; color: var(--muted); margin-bottom: 24px; }
+
+/* ═══════════════════════════════════════
+   EDIT PROFILE TAB
+═══════════════════════════════════════ */
+.edit-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-xl); padding: 36px; max-width: 560px;
+}
+.edit-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; color: var(--brown); margin-bottom: 24px;
+}
+.eg { margin-bottom: 18px; }
+.eg label {
+  display: block; font-size: .73rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--brown); margin-bottom: 6px;
+}
+.eg input, .eg select {
+  width: 100%; padding: 12px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: .9rem; font-family: 'DM Sans', sans-serif;
+  color: var(--text); background: var(--cream); outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.eg input:focus { border-color: var(--rose); background: #fff; box-shadow: 0 0 0 3px rgba(232,119,106,.1); }
+.eg input[disabled] { background: var(--border); color: var(--muted); cursor: not-allowed; }
+.eg .field-note { font-size: .74rem; color: var(--muted); margin-top: 4px; }
+.save-profile-btn {
+  padding: 13px 32px;
+  background: linear-gradient(135deg, var(--rose), var(--rose-d));
+  color: #fff; border: none; border-radius: 12px;
+  font-family: 'DM Sans', sans-serif; font-size: .92rem; font-weight: 700;
+  cursor: pointer; box-shadow: 0 4px 16px rgba(232,119,106,.35);
+  transition: transform .2s, box-shadow .2s;
+}
+.save-profile-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,119,106,.45); }
+
+/* Change password section */
+.change-pw-wrap {
+  margin-top: 32px; padding-top: 28px; border-top: 1px solid var(--border);
+}
+.change-pw-wrap h3 {
+  font-family: 'Playfair Display', serif; font-size: 1.1rem;
+  color: var(--brown); margin-bottom: 18px;
+}
+.pw-input-wrap { position: relative; }
+.pw-input-wrap input { padding-right: 44px; }
+.pw-eye {
+  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--muted); font-size: .95rem;
+  transition: color .2s;
+}
+.pw-eye:hover { color: var(--rose); }
+
+/* Account danger zone */
+.danger-zone {
+  margin-top: 32px; padding: 20px; border-radius: var(--r-m);
+  border: 1.5px solid #fecdd3; background: #fff1f2;
+}
+.danger-zone h4 { font-size: .82rem; font-weight: 700; color: #9f1239; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em; }
+.danger-zone p  { font-size: .8rem; color: #be123c; margin-bottom: 12px; }
+.danger-btn {
+  padding: 8px 16px; background: none; border: 1.5px solid #fca5a5;
+  color: #9f1239; border-radius: 8px; font-size: .8rem; font-weight: 600;
+  cursor: pointer; transition: all .2s; font-family: 'DM Sans', sans-serif;
+}
+.danger-btn:hover { background: #9f1239; color: #fff; border-color: #9f1239; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 700px) {
+  .profile-header { flex-direction: column; text-align: center; }
+  .profile-header::before { display: none; }
+  .profile-header-stats { justify-content: center; }
+  .order-card-body { flex-direction: column; align-items: flex-start; }
+  .oc-total { align-self: flex-end; }
+  .wishlist-grid { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 400px) {
+  .wishlist-grid { grid-template-columns: 1fr; }
+  .ptab { min-width: 90px; font-size: .78rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+  <!-- ── Profile Header ── -->
+  <div class="profile-header reveal">
+    <div class="profile-avatar-big">{{ user.name[0].upper() }}</div>
+    <div class="profile-header-info">
+      <div class="profile-header-name">{{ user.name }}</div>
+      <div class="profile-header-email">{{ user.email }}{% if user.phone %} · {{ user.phone }}{% endif %}</div>
+      <div class="profile-header-stats">
+        <div class="ph-stat">
+          <span class="ph-num">{{ orders|length }}</span>
+          <span class="ph-label">Orders</span>
+        </div>
+        <div class="ph-stat">
+          <span class="ph-num">{{ wishlist|length }}</span>
+          <span class="ph-label">Wishlist</span>
+        </div>
+        <div class="ph-stat">
+          <span class="ph-num">
+            ₹{{ orders|sum(attribute='total_price') }}
+          </span>
+          <span class="ph-label">Total Spent</span>
+        </div>
+        <div class="ph-stat">
+          <span class="ph-num">{{ user.created_at[:10] }}</span>
+          <span class="ph-label">Member Since</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab Bar ── -->
+  <div class="profile-tabs reveal">
+    <button class="ptab active" data-ptab="orders" onclick="switchPTab('orders', this)">
+      📦 My Orders
+      {% if orders %}<span class="tab-badge">{{ orders|length }}</span>{% endif %}
+    </button>
+    <button class="ptab" data-ptab="wishlist" onclick="switchPTab('wishlist', this)">
+      ❤️ Wishlist
+      {% if wishlist %}<span class="tab-badge">{{ wishlist|length }}</span>{% endif %}
+    </button>
+    <button class="ptab" data-ptab="profile" onclick="switchPTab('profile', this)">
+      ✏️ Edit Profile
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════
+       ORDERS PANE
+  ════════════════════════════════ -->
+  <div class="ptab-pane active" id="ptab-orders">
+
+    <!-- Filter row -->
+    {% set all_statuses = ['All'] + orders|map(attribute='status')|unique|list %}
+    <div class="orders-filter-row">
+      {% for s in all_statuses %}
+      <button class="of-btn {% if loop.first %}active{% endif %}"
+              onclick="filterOrders('{{ s }}', this)">{{ s }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="orders-list" id="orders-list">
+      {% if orders %}
+        {% for o in orders %}
+        <div class="order-card" data-status="{{ o.status }}">
+          <div class="order-card-header">
+            <div>
+              <div class="oc-id">Order #{{ o.id }}</div>
+              <div class="oc-date">{{ o.created_at }}</div>
+            </div>
+            <span class="oc-status status-{{ o.status }}">{{ o.status }}</span>
+          </div>
+          <div class="order-card-body">
+            <div class="oc-img">
+              <img src="/static/images/{{ o.product_id }}.jpeg" alt="{{ o.product_name }}"
+                   onerror="this.src='/static/images/bow.jpeg'">
+            </div>
+            <div class="oc-info">
+              <div class="oc-product">{{ o.product_name }}</div>
+              <div class="oc-meta">Qty: {{ o.quantity }} × ₹{{ o.unit_price }}</div>
+              {% if o.details %}
+              <div class="oc-details">📝 {{ o.details }}</div>
+              {% endif %}
+            </div>
+            <div class="oc-total">₹{{ o.total_price }}</div>
+          </div>
+          <div class="order-card-footer">
+            <a href="/track?id={{ o.id }}" class="oc-action oca-track">📍 Track</a>
+            <button class="oc-action oca-reorder"
+                    onclick="window.location='/product/{{ o.product_id }}'">🔁 Reorder</button>
+            <a href="https://wa.me/?text={{ ('Query about Order #' ~ o.id)|urlencode }}"
+               target="_blank" class="oc-action oca-wa">💬 WhatsApp</a>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="no-orders">
+        <div class="no-icon">📦</div>
+        <h3>No orders yet</h3>
+        <p>You haven't placed any orders. Start shopping our handmade collection!</p>
+        <a href="/products" class="btn btn-primary">Browse Products →</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       WISHLIST PANE
+  ════════════════════════════════ -->
+  <div class="ptab-pane" id="ptab-wishlist">
+    <div class="wishlist-grid">
+      {% if wishlist %}
+        {% for p in wishlist %}
+        <div class="wl-card" id="wl-{{ p.id }}">
+          <div class="wl-img">
+            <img src="/static/images/{{ p.image }}" alt="{{ p.name }}" loading="lazy">
+            <button class="wl-remove" onclick="removeWishlist('{{ p.id }}')" title="Remove">❤️</button>
+          </div>
+          <div class="wl-body">
+            <div class="wl-name">{{ p.name }}</div>
+            <div class="wl-price">₹{{ p.price }}</div>
+            <button class="wl-order-btn"
+                    onclick="window.location='/product/{{ p.id }}'">Order Now →</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="no-wishlist">
+        <div class="no-icon">🤍</div>
+        <h3>Your wishlist is empty</h3>
+        <p>Tap the heart icon on any product to save it here for later.</p>
+        <a href="/products" class="btn btn-primary">Explore Products →</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       EDIT PROFILE PANE
+  ════════════════════════════════ -->
+  <div class="ptab-pane" id="ptab-profile">
+    <div class="edit-card">
+      <h2>Edit Profile</h2>
+      <form action="/profile/update" method="POST">
+        <div class="eg">
+          <label>Full Name</label>
+          <input type="text" name="name" value="{{ user.name }}" required placeholder="Your full name">
+        </div>
+        <div class="eg">
+          <label>Email Address</label>
+          <input type="email" value="{{ user.email }}" disabled>
+          <div class="field-note">Email cannot be changed. Contact us to update.</div>
+        </div>
+        <div class="eg">
+          <label>Phone / WhatsApp</label>
+          <input type="tel" name="phone" value="{{ user.phone or '' }}" placeholder="10-digit number">
+        </div>
+        <div class="eg">
+          <label>Member Since</label>
+          <input type="text" value="{{ user.created_at[:10] }}" disabled>
+        </div>
+        <button type="submit" class="save-profile-btn">Save Changes →</button>
+      </form>
+
+      <!-- Change Password -->
+      <div class="change-pw-wrap">
+        <h3>Change Password</h3>
+        <form action="/forgot-password" method="POST">
+          <div class="eg">
+            <label>Your Email</label>
+            <input type="email" name="email" value="{{ user.email }}" readonly>
+            <div class="field-note">We'll send a reset link to this email.</div>
+          </div>
+          <button type="submit" class="btn btn-ghost btn-sm">Send Reset Link →</button>
+        </form>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="danger-zone">
+        <h4>⚠ Danger Zone</h4>
+        <p>Logging out will end your current session on this device.</p>
+        <a href="/logout" class="danger-btn">Sign Out</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Profile tab switching ── */
+function switchPTab(name, btn) {
+  document.querySelectorAll('.ptab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+  document.getElementById('ptab-' + name).classList.add('active');
+  btn.classList.add('active');
+  history.replaceState(null, '', '#' + name);
+}
+
+/* ── Auto-open tab from hash (on load AND on hash change) ── */
+function openTabFromHash() {
+  const hash = location.hash.replace('#', '');
+  const btn  = document.querySelector(`[data-ptab="${hash}"]`);
+  if (btn) switchPTab(hash, btn);
+}
+openTabFromHash();
+window.addEventListener('hashchange', openTabFromHash);
+
+/* ── Orders filter ── */
+function filterOrders(status, btn) {
+  document.querySelectorAll('.of-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.order-card').forEach(card => {
+    card.style.display = (status === 'All' || card.dataset.status === status) ? '' : 'none';
+  });
+}
+
+/* ── Remove from wishlist ── */
+function removeWishlist(pid) {
+  fetch('/wishlist/toggle/' + pid)
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === 'removed') {
+        const el = document.getElementById('wl-' + pid);
+        if (el) {
+          el.style.transition = 'opacity .3s, transform .3s';
+          el.style.opacity = '0';
+          el.style.transform = 'scale(.9)';
+          setTimeout(() => {
+            el.remove();
+            // Show empty state if grid is empty
+            const grid = document.querySelector('.wishlist-grid');
+            if (grid && !grid.querySelector('.wl-card')) {
+              grid.innerHTML = `
+                <div class="no-wishlist">
+                  <div class="no-icon">🤍</div>
+                  <h3>Wishlist is empty</h3>
+                  <p>Browse our collection and heart the pieces you love.</p>
+                  <a href="/products" class="btn btn-primary">Explore Products →</a>
+                </div>`;
+            }
+          }, 300);
+        }
+      }
+    });
+}
+
+/* ── Stagger-animate order cards ── */
+document.querySelectorAll('.order-card').forEach((card, i) => {
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(16px)';
+  setTimeout(() => {
+    card.style.transition = 'opacity .4s ease, transform .4s ease, box-shadow .2s, border-color .2s';
+    card.style.opacity = '1';
+    card.style.transform = 'translateY(0)';
+  }, 100 + i * 80);
+});
+</script>
+{% endblock %}

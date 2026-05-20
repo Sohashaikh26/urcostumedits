@@ -1,0 +1,770 @@
+
+{% block title %}Manage Products — Admin{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   ADMIN SHELL TOKENS  (same as dashboard)
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --rose:   #e8776a; --rose-d: #d4564a; --rose-l: #f5e8e6;
+  --cream:  #fdf6f0; --warm:   #f5ece3;
+  --brown:  #5c3d2e; --brown-d: #3d1f10;
+  --text:   #2a1a12; --muted:  #9e8070; --border: #e8d8cc;
+  --white:  #ffffff;
+  --sidebar-w: 240px;
+  --header-h:  60px;
+  --shadow-m: 0 8px 28px rgba(92,61,46,.12);
+  --r: 14px; --r-l: 18px; --r-xl: 22px; --r-m: 10px;
+}
+html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+img { display: block; max-width: 100%; }
+
+/* ── SIDEBAR (identical to dashboard) ── */
+.admin-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w); z-index: 200;
+  background: linear-gradient(180deg, var(--brown-d) 0%, var(--brown) 100%);
+  display: flex; flex-direction: column;
+  transition: transform .3s ease;
+  overflow-y: auto;
+}
+.sidebar-brand {
+  padding: 22px 20px 18px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-brand img { width: 32px; height: 32px; border-radius: 8px; }
+.sidebar-brand-text .sb-title { font-family: 'Playfair Display', serif; font-size: .95rem; color: #fff; font-weight: 600; }
+.sidebar-brand-text .sb-sub   { font-size: .68rem; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .06em; }
+.sidebar-nav { flex: 1; padding: 16px 10px; }
+.nav-section-label {
+  font-size: .62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: rgba(255,255,255,.3);
+  padding: 12px 12px 6px; margin-top: 8px;
+}
+.nav-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; margin-bottom: 2px;
+  font-size: .86rem; color: rgba(255,255,255,.65);
+  transition: background .2s, color .2s;
+}
+.nav-link:hover  { background: rgba(255,255,255,.1); color: #fff; }
+.nav-link.active { background: rgba(232,119,106,.25); color: #fff; }
+.nav-link.active .nl-icon { color: var(--rose); }
+.nl-icon { font-size: 1rem; width: 22px; text-align: center; flex-shrink: 0; }
+.nl-badge {
+  margin-left: auto; background: var(--rose); color: #fff;
+  font-size: .62rem; font-weight: 700; padding: 1px 7px;
+  border-radius: 10px; min-width: 20px; text-align: center;
+}
+.sidebar-footer {
+  padding: 16px 10px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-footer .nav-link { color: rgba(255,255,255,.45); }
+.sidebar-footer .nav-link:hover { color: #fff; }
+
+/* ── HEADER (identical to dashboard) ── */
+.admin-header {
+  position: fixed; top: 0; left: var(--sidebar-w); right: 0; z-index: 100;
+  height: var(--header-h);
+  background: rgba(253,246,240,.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+}
+.header-left  { display: flex; align-items: center; gap: 12px; }
+.header-page-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--brown); font-weight: 600; }
+.header-breadcrumb { font-size: .78rem; color: var(--muted); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-notif {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--warm); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; position: relative; transition: background .2s;
+}
+.header-notif:hover { background: var(--rose-l); }
+.admin-user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--warm); border-radius: 22px; padding: 6px 14px 6px 8px;
+  font-size: .84rem; font-weight: 500; color: var(--brown);
+}
+.auc-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--brown), var(--brown-d));
+  color: #fff; font-size: .7rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.hamburger-admin {
+  display: none; background: none; border: none; cursor: pointer;
+  flex-direction: column; gap: 4px; padding: 6px;
+}
+.hamburger-admin span { display: block; width: 20px; height: 2px; background: var(--brown); border-radius: 2px; }
+
+/* ── MAIN AREA ── */
+.admin-main {
+  margin-left: var(--sidebar-w);
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
+.admin-content { padding: 32px 28px; }
+
+/* ── Sidebar overlay (mobile) ── */
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; z-index: 190;
+  background: rgba(0,0,0,.45);
+}
+.sidebar-overlay.open { display: block; }
+
+/* ═══════════════════════════════════════
+   PRODUCTS PAGE STYLES (unchanged)
+═══════════════════════════════════════ */
+.adm-hdr { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+.adm-title { font-family:'Playfair Display',serif; font-size:clamp(1.4rem,2.5vw,1.9rem); color:var(--brown); }
+.adm-sub { font-size:.82rem; color:var(--muted); margin-top:2px; }
+
+.btn { display:inline-flex; align-items:center; font-family:'DM Sans',sans-serif; font-weight:600; border-radius:10px; cursor:pointer; transition:all .2s; border:none; text-decoration:none; }
+.btn-primary { background:linear-gradient(135deg,var(--rose),var(--rose-d)); color:#fff; box-shadow:0 4px 14px rgba(232,119,106,.3); }
+.btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,119,106,.4); }
+.btn-ghost { background:var(--warm); color:var(--brown); border:1.5px solid var(--border); }
+.btn-ghost:hover { border-color:var(--brown); }
+.btn-sm { padding:8px 16px; font-size:.82rem; }
+
+.prod-toolbar {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:#fff; border:1px solid var(--border); border-radius:var(--r-l);
+  padding:14px 18px; margin-bottom:20px;
+  box-shadow:0 1px 6px rgba(92,61,46,.06);
+}
+.pt-search {
+  flex:1; min-width:200px; display:flex; gap:0;
+  background:var(--cream); border:1.5px solid var(--border);
+  border-radius:10px; overflow:hidden; transition:border-color .2s;
+}
+.pt-search:focus-within { border-color:var(--rose); }
+.pt-search input { flex:1; padding:9px 14px; border:none; outline:none; font-size:.86rem; font-family:'DM Sans',sans-serif; color:var(--text); background:transparent; }
+.pt-search input::placeholder { color:#c9b5a8; }
+.pt-search button { padding:0 14px; background:var(--rose); color:#fff; border:none; cursor:pointer; font-size:.9rem; transition:background .2s; }
+.pt-search button:hover { background:var(--rose-d); }
+.pt-count { font-size:.82rem; color:var(--muted); margin-left:auto; white-space:nowrap; }
+.pt-count strong { color:var(--brown); }
+
+.products-admin-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px,1fr));
+  gap:18px; margin-bottom:24px;
+}
+.prod-admin-card {
+  background:#fff; border:1px solid var(--border); border-radius:var(--r-l);
+  overflow:hidden; transition:box-shadow .2s, transform .2s;
+}
+.prod-admin-card:hover { box-shadow:var(--shadow-m); transform:translateY(-3px); }
+.prod-admin-card.inactive { opacity:.55; }
+
+.pac-img { aspect-ratio:1; overflow:hidden; position:relative; background:var(--warm); }
+.pac-img img { width:100%; height:100%; object-fit:cover; transition:transform .4s; }
+.prod-admin-card:hover .pac-img img { transform:scale(1.06); }
+.pac-status-bar {
+  position:absolute; bottom:0; left:0; right:0; padding:6px 10px;
+  display:flex; align-items:center; justify-content:space-between;
+  background:linear-gradient(0deg,rgba(0,0,0,.55),transparent);
+  font-size:.72rem; font-weight:700;
+}
+.pac-stock-lbl { color:#fff; }
+.pac-stock-lbl.low  { color:#fde68a; }
+.pac-stock-lbl.zero { color:#fca5a5; }
+.pac-active-badge { padding:2px 8px; border-radius:10px; font-size:.65rem; font-weight:700; }
+.pab-on  { background:#22c55e; color:#fff; }
+.pab-off { background:#6b7280; color:#fff; }
+
+.pac-body { padding:14px 16px; }
+.pac-cat  { font-size:.67rem; font-weight:700; color:var(--rose); text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
+.pac-name { font-family:'Playfair Display',serif; font-size:.98rem; color:var(--brown); margin-bottom:6px; line-height:1.3; }
+.pac-price { font-size:.9rem; font-weight:700; color:var(--brown); margin-bottom:2px; }
+.pac-id   { font-size:.72rem; color:var(--muted); }
+
+.pac-actions {
+  display:flex; gap:8px; padding:12px 16px;
+  border-top:1px solid var(--border); background:#fdfaf8;
+}
+.pa-btn {
+  flex:1; padding:7px 0; border-radius:8px; font-size:.76rem; font-weight:600;
+  border:none; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s;
+  text-align:center;
+}
+.pab-edit   { background:var(--warm); color:var(--brown); }
+.pab-edit:hover { background:var(--border); }
+.pab-del    { background:#fff1f2; color:#9f1239; }
+.pab-del:hover { background:#fecdd3; }
+.pab-view   { background:var(--rose-l); color:var(--rose-d); text-decoration:none; display:flex; align-items:center; justify-content:center; }
+.pab-view:hover { background:var(--rose); color:#fff; }
+
+.add-product-cta {
+  background:linear-gradient(135deg, var(--warm), var(--rose-l));
+  border:2px dashed var(--rose); border-radius:var(--r-l);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:10px; padding:40px 20px; cursor:pointer; transition:all .2s; min-height:200px;
+}
+.add-product-cta:hover { background:var(--rose-l); transform:scale(1.01); }
+.add-product-cta .cta-icon { font-size:2rem; }
+.add-product-cta span { font-size:.88rem; font-weight:600; color:var(--rose-d); }
+
+/* Modals */
+.modal-backdrop {
+  display:none; position:fixed; inset:0; z-index:1200;
+  background:rgba(42,26,18,.55); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-backdrop.open { display:flex; }
+.modal-box {
+  background:#fff; border-radius:var(--r-xl); padding:36px;
+  width:100%; max-width:580px; box-shadow:0 30px 80px rgba(42,26,18,.2);
+  animation:fadeUp .3s ease; max-height:90vh; overflow-y:auto;
+}
+.modal-box h2 { font-family:'Playfair Display',serif; font-size:1.35rem; color:var(--brown); margin-bottom:22px; }
+.modal-box::-webkit-scrollbar { width:4px; }
+.modal-box::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+.form-row-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.mf { margin-bottom:16px; }
+.mf label { display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--brown); margin-bottom:5px; }
+.mf input, .mf textarea, .mf select {
+  width:100%; padding:10px 13px; border:1.5px solid var(--border);
+  border-radius:9px; font-size:.87rem; font-family:'DM Sans',sans-serif;
+  color:var(--text); background:var(--cream); outline:none; transition:border-color .2s;
+}
+.mf input:focus, .mf textarea:focus, .mf select:focus { border-color:var(--rose); background:#fff; }
+.mf textarea { resize:vertical; min-height:72px; }
+.mf .hint { font-size:.72rem; color:var(--muted); margin-top:4px; }
+
+.img-upload-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:6px; }
+.img-drop-zone {
+  position:relative; border:2px dashed var(--border); border-radius:var(--r-m);
+  background:var(--cream); aspect-ratio:1; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; cursor:pointer; transition:border-color .2s, background .2s;
+  text-align:center; padding:12px;
+}
+.img-drop-zone:hover,
+.img-drop-zone.drag-over { border-color:var(--rose); background:var(--rose-l); }
+.img-drop-zone.has-file   { border-style:solid; border-color:var(--rose); }
+.img-drop-zone input[type="file"] {
+  position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
+  padding:0; border:none; background:transparent;
+}
+.idz-icon  { font-size:1.6rem; pointer-events:none; }
+.idz-label { font-size:.72rem; font-weight:600; color:var(--rose-d); pointer-events:none; line-height:1.3; }
+.idz-sub   { font-size:.66rem; color:var(--muted); pointer-events:none; }
+.idz-preview {
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; border-radius:calc(var(--r-m) - 2px); display:none;
+}
+.idz-clear {
+  position:absolute; top:5px; right:5px; width:20px; height:20px;
+  background:rgba(0,0,0,.55); border:none; border-radius:50%; color:#fff;
+  font-size:.7rem; cursor:pointer; display:none; align-items:center;
+  justify-content:center; z-index:2; transition:background .2s;
+}
+.idz-clear:hover { background:rgba(220,38,38,.8); }
+.img-drop-zone.has-file .idz-preview { display:block; }
+.img-drop-zone.has-file .idz-clear   { display:flex; }
+.img-drop-zone.has-file .idz-icon,
+.img-drop-zone.has-file .idz-label,
+.img-drop-zone.has-file .idz-sub    { display:none; }
+.idz-slot-lbl { font-size:.68rem; font-weight:700; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.06em; }
+
+.modal-footer { display:flex; gap:10px; margin-top:20px; }
+.mf-cancel {
+  flex:1; padding:11px; background:var(--warm); border:none; border-radius:10px;
+  font-size:.87rem; font-weight:600; color:var(--muted); cursor:pointer; transition:background .2s;
+}
+.mf-cancel:hover { background:var(--border); }
+.mf-save {
+  flex:2; padding:11px;
+  background:linear-gradient(135deg,var(--rose),var(--rose-d));
+  color:#fff; border:none; border-radius:10px; font-size:.87rem; font-weight:700;
+  cursor:pointer; box-shadow:0 4px 14px rgba(232,119,106,.35); transition:transform .2s;
+}
+.mf-save:hover { transform:translateY(-1px); }
+.confirm-modal { max-width:360px; text-align:center; }
+.confirm-modal .cm-icon { font-size:2.5rem; margin-bottom:12px; }
+.confirm-modal h3 { font-family:'Playfair Display',serif; font-size:1.15rem; color:var(--brown); margin-bottom:6px; }
+.confirm-modal p  { font-size:.85rem; color:var(--muted); margin-bottom:20px; }
+.cm-actions { display:flex; gap:10px; justify-content:center; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+
+/* ── Responsive ── */
+@media (max-width:768px) {
+  .admin-sidebar { transform:translateX(-100%); }
+  .admin-sidebar.open { transform:translateX(0); }
+  .admin-main, .admin-header { margin-left:0; left:0; }
+  .hamburger-admin { display:flex; }
+  .admin-content { padding:20px 16px; }
+}
+@media (max-width:600px) { .form-row-2 { grid-template-columns:1fr; } .products-admin-grid { grid-template-columns:repeat(2,1fr); } .img-upload-row { grid-template-columns:1fr 1fr; } }
+@media (max-width:420px) { .products-admin-grid { grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ═══ SIDEBAR (dashboard-style) ═══ -->
+<aside class="admin-sidebar" id="admin-sidebar">
+  <div class="sidebar-brand">
+    <img src="/static/images/logo.png" alt="logo" onerror="this.style.display='none'">
+    <div class="sidebar-brand-text">
+      <div class="sb-title">UrCostome Edit</div>
+      <div class="sb-sub">Admin Panel</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a href="/admin" class="nav-link"><span class="nl-icon">📊</span> Dashboard</a>
+    <a href="/admin/orders" class="nav-link">
+      <span class="nl-icon">📦</span> Orders
+      {% if new_orders | default(0) > 0 %}<span class="nl-badge">{{ new_orders }}</span>{% endif %}
+    </a>
+    <a href="/admin/products" class="nav-link active"><span class="nl-icon">🧶</span> Products</a>
+    <a href="/admin/users"    class="nav-link"><span class="nl-icon">👥</span> Users</a>
+    <div class="nav-section-label">Store</div>
+    <a href="/"        target="_blank" class="nav-link"><span class="nl-icon">🌐</span> View Store</a>
+    <a href="/products" target="_blank" class="nav-link"><span class="nl-icon">🛍</span> Shop Page</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="nav-link" style="padding:8px 12px;gap:8px;">
+      <div style="width:30px;height:30px;border-radius:50%;background:rgba(232,119,106,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;">
+        {{ session.admin_name[0].upper() if session.admin_name else 'A' }}
+      </div>
+      <div>
+        <div style="font-size:.82rem;color:#fff;font-weight:500;">{{ session.admin_name }}</div>
+        <div style="font-size:.68rem;color:rgba(255,255,255,.4);">Administrator</div>
+      </div>
+    </div>
+    <a href="/admin/logout" class="nav-link" style="color:rgba(232,119,106,.8);">
+      <span class="nl-icon">🚪</span> Logout
+    </a>
+  </div>
+</aside>
+
+<!-- ═══ HEADER (dashboard-style) ═══ -->
+<header class="admin-header">
+  <div class="header-left">
+    <button class="hamburger-admin" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <div>
+      <div class="header-page-title">Products</div>
+      <div class="header-breadcrumb">Admin / Products</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="header-notif" title="Notifications">🔔</button>
+    <div class="admin-user-chip">
+      <div class="auc-avatar">{{ session.admin_name[0].upper() if session.admin_name else 'A' }}</div>
+      {{ session.admin_name }}
+    </div>
+  </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main class="admin-main">
+  <div class="admin-content">
+
+    <div class="adm-hdr">
+      <div>
+        <div class="adm-title">Products</div>
+        <div class="adm-sub">Add, edit and manage your crochet collection</div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary btn-sm" onclick="openAdd()">+ Add Product</button>
+        <a href="/admin" class="btn btn-ghost btn-sm">← Dashboard</a>
+      </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="prod-toolbar">
+      <div class="pt-search">
+        <input type="text" id="prod-search" placeholder="Search by name, category, ID…"
+               oninput="filterProducts(this.value)">
+        <button type="button">🔍</button>
+      </div>
+      <div class="pt-count" id="prod-count">
+        <strong>{{ products|length }}</strong> product{{ 's' if products|length != 1 }}
+      </div>
+    </div>
+
+    <!-- PRODUCTS GRID -->
+    <div class="products-admin-grid" id="prod-grid">
+      <div class="add-product-cta" onclick="openAdd()">
+        <div class="cta-icon">➕</div>
+        <span>Add New Product</span>
+      </div>
+
+      {% for p in products %}
+      <div class="prod-admin-card {% if not p.is_active %}inactive{% endif %}"
+           data-name="{{ p.name|lower }}" data-cat="{{ p.category|lower }}" data-id="{{ p.id|lower }}">
+        <div class="pac-img">
+          <img src="/static/images/{{ p.image }}" alt="{{ p.name }}"
+               onerror="this.src='/static/images/bow.jpeg'">
+          <div class="pac-status-bar">
+            <span class="pac-stock-lbl {% if p.stock == 0 %}zero{% elif p.stock <= 5 %}low{% endif %}">
+              {% if p.stock == 0 %}Out of stock
+              {% elif p.stock <= 5 %}{{ p.stock }} left
+              {% else %}{{ p.stock }} in stock{% endif %}
+            </span>
+            <span class="pac-active-badge {% if p.is_active %}pab-on{% else %}pab-off{% endif %}">
+              {{ 'Active' if p.is_active else 'Hidden' }}
+            </span>
+          </div>
+        </div>
+        <div class="pac-body">
+          <div class="pac-cat">{{ p.category }}</div>
+          <div class="pac-name">{{ p.name }}</div>
+          <div class="pac-price">₹{{ p.price }}</div>
+          <div class="pac-id">ID: {{ p.id }}</div>
+        </div>
+        <div class="pac-actions">
+          <button class="pa-btn pab-edit" onclick="openEdit(
+            '{{ p.id }}',
+            '{{ p.name|replace("'","\\'") }}',
+            {{ p.price }}, {{ p.stock }},
+            '{{ p.image }}',
+            '{{ p.image2 if p.image2 else "" }}',
+            '{{ p.category }}',
+            {{ p.is_active }},
+            '{{ p.description|replace("'","\\'")|replace("\n"," ")|truncate(120,true,"") }}',
+            '{{ p.criteria|replace("'","\\'")|replace("\n"," ") }}',
+            '{{ p.best_for|replace("'","\\'")|replace("\n"," ") }}'
+          )">✏ Edit</button>
+          <a href="/product/{{ p.id }}" target="_blank" class="pa-btn pab-view">👁 View</a>
+          <button class="pa-btn pab-del"
+            onclick="confirmDelete('{{ p.id }}','{{ p.name|replace("'","\\'") }}')">🗑</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</main>
+
+<!-- ═══ ADD PRODUCT MODAL ═══ -->
+<div class="modal-backdrop" id="add-modal" onclick="if(event.target===this)closeAdd()">
+  <div class="modal-box">
+    <h2>Add New Product ✦</h2>
+    <form method="POST" action="/admin/products/add" enctype="multipart/form-data">
+      <div class="form-row-2">
+        <div class="mf">
+          <label>Product ID *</label>
+          <input type="text" name="id" placeholder="e.g. star-keychain" required
+                 pattern="[a-z0-9\-]+" title="Lowercase letters, numbers and hyphens only">
+          <div class="hint">Lowercase letters, numbers, hyphens only</div>
+        </div>
+        <div class="mf">
+          <label>Category *</label>
+          <select name="category">
+            <option value="Keychains">Keychains</option>
+            <option value="Personalised">Personalised</option>
+            <option value="Seasonal">Seasonal</option>
+            <option value="Accessories">Accessories</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+      </div>
+      <div class="mf">
+        <label>Product Name *</label>
+        <input type="text" name="name" placeholder="e.g. Star Crochet Keychain" required>
+      </div>
+      <div class="form-row-2">
+        <div class="mf">
+          <label>Price (₹) *</label>
+          <input type="number" name="price" placeholder="99" min="1" required>
+        </div>
+        <div class="mf">
+          <label>Stock Quantity *</label>
+          <input type="number" name="stock" placeholder="50" min="0" required>
+        </div>
+      </div>
+      <div class="mf">
+        <label>Product Images <span style="font-weight:400;text-transform:none;color:var(--muted)">(up to 2)</span></label>
+        <div class="img-upload-row">
+          <div>
+            <div class="idz-slot-lbl">Main Image</div>
+            <div class="img-drop-zone" id="add-zone-1"
+                 ondragover="dzDragOver(event,'add-zone-1')"
+                 ondragleave="dzDragLeave('add-zone-1')"
+                 ondrop="dzDrop(event,'add-zone-1','add-prev-1')">
+              <input type="file" name="image" id="add-file-1" accept="image/*"
+                     onchange="dzPick(this,'add-zone-1','add-prev-1')">
+              <span class="idz-icon">📷</span>
+              <span class="idz-label">Click or drag<br>to upload</span>
+              <span class="idz-sub">JPG, PNG, WEBP</span>
+              <img class="idz-preview" id="add-prev-1" src="" alt="">
+              <button type="button" class="idz-clear" onclick="dzClear('add-zone-1','add-prev-1','add-file-1',event)">✕</button>
+            </div>
+          </div>
+          <div>
+            <div class="idz-slot-lbl">Second Image <span style="font-weight:400">(optional)</span></div>
+            <div class="img-drop-zone" id="add-zone-2"
+                 ondragover="dzDragOver(event,'add-zone-2')"
+                 ondragleave="dzDragLeave('add-zone-2')"
+                 ondrop="dzDrop(event,'add-zone-2','add-prev-2')">
+              <input type="file" name="image2" id="add-file-2" accept="image/*"
+                     onchange="dzPick(this,'add-zone-2','add-prev-2')">
+              <span class="idz-icon">🖼</span>
+              <span class="idz-label">Click or drag<br>to upload</span>
+              <span class="idz-sub">JPG, PNG, WEBP</span>
+              <img class="idz-preview" id="add-prev-2" src="" alt="">
+              <button type="button" class="idz-clear" onclick="dzClear('add-zone-2','add-prev-2','add-file-2',event)">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:8px;">Images saved to <code>static/images/</code> automatically</div>
+      </div>
+      <div class="mf">
+        <label>Description</label>
+        <textarea name="description" rows="3" placeholder="Describe the product…"></textarea>
+      </div>
+      <div class="mf">
+        <label>Customisation Options</label>
+        <input type="text" name="criteria" placeholder="Colour can be changed|Size options|Gift packing available">
+        <div class="hint">Separate options with | (pipe)</div>
+      </div>
+      <div class="mf">
+        <label>Best For</label>
+        <input type="text" name="best_for" placeholder="Birthdays, hampers, farewell gifts">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="mf-cancel" onclick="closeAdd()">Cancel</button>
+        <button type="submit" class="mf-save">✓ Add Product</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ EDIT PRODUCT MODAL ═══ -->
+<div class="modal-backdrop" id="edit-modal" onclick="if(event.target===this)closeEdit()">
+  <div class="modal-box">
+    <h2>Edit Product ✦</h2>
+    <form method="POST" id="edit-form" enctype="multipart/form-data">
+      <div class="form-row-2">
+        <div class="mf">
+          <label>Product Name *</label>
+          <input type="text" name="name" id="e-name" required>
+        </div>
+        <div class="mf">
+          <label>Category</label>
+          <select name="category" id="e-cat">
+            <option value="Keychains">Keychains</option>
+            <option value="Personalised">Personalised</option>
+            <option value="Seasonal">Seasonal</option>
+            <option value="Accessories">Accessories</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="mf">
+          <label>Price (₹) *</label>
+          <input type="number" name="price" id="e-price" min="1" required>
+        </div>
+        <div class="mf">
+          <label>Stock Quantity</label>
+          <input type="number" name="stock" id="e-stock" min="0">
+        </div>
+      </div>
+      <div class="mf">
+        <label>Product Images <span style="font-weight:400;text-transform:none;color:var(--muted)">(up to 2)</span></label>
+        <div class="img-upload-row">
+          <div>
+            <div class="idz-slot-lbl">Main Image</div>
+            <div class="img-drop-zone" id="edit-zone-1"
+                 ondragover="dzDragOver(event,'edit-zone-1')"
+                 ondragleave="dzDragLeave('edit-zone-1')"
+                 ondrop="dzDrop(event,'edit-zone-1','edit-prev-1')">
+              <input type="file" name="image" id="edit-file-1" accept="image/*"
+                     onchange="dzPick(this,'edit-zone-1','edit-prev-1')">
+              <span class="idz-icon">📷</span>
+              <span class="idz-label">Click or drag<br>to replace</span>
+              <span class="idz-sub">Leave empty to keep current</span>
+              <img class="idz-preview" id="edit-prev-1" src="" alt="">
+              <button type="button" class="idz-clear" onclick="dzClear('edit-zone-1','edit-prev-1','edit-file-1',event)">✕</button>
+            </div>
+          </div>
+          <div>
+            <div class="idz-slot-lbl">Second Image <span style="font-weight:400">(optional)</span></div>
+            <div class="img-drop-zone" id="edit-zone-2"
+                 ondragover="dzDragOver(event,'edit-zone-2')"
+                 ondragleave="dzDragLeave('edit-zone-2')"
+                 ondrop="dzDrop(event,'edit-zone-2','edit-prev-2')">
+              <input type="file" name="image2" id="edit-file-2" accept="image/*"
+                     onchange="dzPick(this,'edit-zone-2','edit-prev-2')">
+              <span class="idz-icon">🖼</span>
+              <span class="idz-label">Click or drag<br>to replace</span>
+              <span class="idz-sub">Leave empty to keep current</span>
+              <img class="idz-preview" id="edit-prev-2" src="" alt="">
+              <button type="button" class="idz-clear" onclick="dzClear('edit-zone-2','edit-prev-2','edit-file-2',event)">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:8px;">Upload new files to replace existing images</div>
+      </div>
+      <div class="mf">
+        <label>Description</label>
+        <textarea name="description" id="e-desc" rows="3"></textarea>
+      </div>
+      <div class="mf">
+        <label>Customisation Options</label>
+        <input type="text" name="criteria" id="e-criteria" placeholder="Option 1|Option 2|Option 3">
+        <div class="hint">Separate with |</div>
+      </div>
+      <div class="mf">
+        <label>Best For</label>
+        <input type="text" name="best_for" id="e-best_for">
+      </div>
+      <div class="mf">
+        <label>Visibility</label>
+        <select name="is_active" id="e-active">
+          <option value="1">Active (visible to customers)</option>
+          <option value="0">Hidden (not shown in store)</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="mf-cancel" onclick="closeEdit()">Cancel</button>
+        <button type="submit" class="mf-save">✓ Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ DELETE CONFIRM MODAL ═══ -->
+<div class="modal-backdrop" id="del-modal" onclick="if(event.target===this)closeDelete()">
+  <div class="modal-box confirm-modal">
+    <div class="cm-icon">🗑</div>
+    <h3>Deactivate Product?</h3>
+    <p id="del-msg">This will hide the product from the store. You can re-activate it later by editing it.</p>
+    <div class="cm-actions">
+      <button class="mf-cancel" style="flex:1;" onclick="closeDelete()">Cancel</button>
+      <form id="del-form" method="POST" style="flex:2;">
+        <button type="submit" style="width:100%;padding:11px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:.87rem;font-weight:700;cursor:pointer;">
+          Deactivate
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Sidebar toggle ── */
+function toggleSidebar() {
+  document.getElementById('admin-sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+  document.body.style.overflow = document.getElementById('admin-sidebar').classList.contains('open') ? 'hidden' : '';
+}
+function closeSidebar() {
+  document.getElementById('admin-sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ── Drag-and-drop helpers ── */
+function dzDragOver(e, zoneId) { e.preventDefault(); document.getElementById(zoneId).classList.add('drag-over'); }
+function dzDragLeave(zoneId)   { document.getElementById(zoneId).classList.remove('drag-over'); }
+function dzDrop(e, zoneId, previewId) {
+  e.preventDefault(); dzDragLeave(zoneId);
+  const file = e.dataTransfer.files[0]; if (!file) return;
+  const input = document.getElementById(zoneId).querySelector('input[type="file"]');
+  try { const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files; } catch(err) {}
+  _showPreview(file, zoneId, previewId);
+}
+function dzPick(input, zoneId, previewId) { const file = input.files[0]; if (file) _showPreview(file, zoneId, previewId); }
+function _showPreview(file, zoneId, previewId) {
+  if (!file.type.startsWith('image/')) return;
+  const r = new FileReader();
+  r.onload = e => {
+    document.getElementById(previewId).src = e.target.result;
+    document.getElementById(zoneId).classList.add('has-file');
+    document.getElementById(zoneId).classList.remove('drag-over');
+  };
+  r.readAsDataURL(file);
+}
+function dzClear(zoneId, previewId, inputId, e) {
+  e.stopPropagation();
+  document.getElementById(previewId).src = '';
+  document.getElementById(zoneId).classList.remove('has-file');
+  try { document.getElementById(inputId).value = ''; } catch(_) {}
+  try { const dt = new DataTransfer(); document.getElementById(inputId).files = dt.files; } catch(_) {}
+}
+
+/* ── Add modal ── */
+function openAdd()  { document.getElementById('add-modal').classList.add('open'); document.body.style.overflow='hidden'; }
+function closeAdd() { document.getElementById('add-modal').classList.remove('open'); document.body.style.overflow=''; }
+
+/* ── Edit modal ── */
+function openEdit(id, name, price, stock, image, image2, category, isActive, desc, criteria, bestFor) {
+  document.getElementById('edit-form').action = '/admin/products/edit/' + id;
+  document.getElementById('e-name').value     = name;
+  document.getElementById('e-price').value    = price;
+  document.getElementById('e-stock').value    = stock;
+  document.getElementById('e-desc').value     = desc;
+  document.getElementById('e-criteria').value = criteria;
+  document.getElementById('e-best_for').value = bestFor;
+  document.getElementById('e-active').value   = isActive ? '1' : '0';
+  const catSel = document.getElementById('e-cat');
+  for (let opt of catSel.options) { opt.selected = (opt.value === category); }
+  _setEditZone('edit-zone-1','edit-prev-1', image);
+  _setEditZone('edit-zone-2','edit-prev-2', image2);
+  document.getElementById('edit-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function _setEditZone(zoneId, previewId, filename) {
+  const zone = document.getElementById(zoneId), prev = document.getElementById(previewId);
+  if (filename) {
+    prev.src = '/static/images/' + filename;
+    prev.onload  = () => zone.classList.add('has-file');
+    prev.onerror = () => { zone.classList.remove('has-file'); prev.src=''; };
+  } else { prev.src=''; zone.classList.remove('has-file'); }
+}
+function closeEdit() { document.getElementById('edit-modal').classList.remove('open'); document.body.style.overflow=''; }
+
+/* ── Delete modal ── */
+function confirmDelete(id, name) {
+  document.getElementById('del-form').action = '/admin/products/delete/' + id;
+  document.getElementById('del-msg').textContent = `"${name}" will be hidden from the store. You can re-activate it by editing it later.`;
+  document.getElementById('del-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDelete() { document.getElementById('del-modal').classList.remove('open'); document.body.style.overflow=''; }
+
+/* ── Search filter ── */
+function filterProducts(q) {
+  q = q.toLowerCase().trim();
+  const cards = document.querySelectorAll('.prod-admin-card');
+  let visible = 0;
+  cards.forEach(card => {
+    const match = !q || card.dataset.name.includes(q) || card.dataset.cat.includes(q) || card.dataset.id.includes(q);
+    card.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.getElementById('prod-count').innerHTML = `<strong>${visible}</strong> product${visible!==1?'s':''}`;
+}
+
+/* ── Stagger cards ── */
+document.querySelectorAll('.prod-admin-card').forEach((card, i) => {
+  card.style.opacity = '0'; card.style.transform = 'translateY(16px)';
+  setTimeout(() => {
+    card.style.transition = 'opacity .4s ease, transform .4s ease, box-shadow .2s';
+    card.style.opacity = '1'; card.style.transform = 'translateY(0)';
+  }, 60 + i * 60);
+});
+</script>
+{% endblock %}

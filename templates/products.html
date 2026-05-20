@@ -1,13 +1,511 @@
+{% extends "base.html" %}
+{% block title %}Shop All Products — UrCostome Edit{% endblock %}
 
-{% extends "base.html" %}{% block content %}
-<section class="page">
-<div class="page-title"><p class="eyebrow">shop handmade</p><h1>Our Collection</h1><p>Click any product to view details, customisation criteria and place an order.</p></div>
-<div class="product-grid">
-{% for p in products %}
-<a class="product-card" href="{{ url_for('product', pid=p.id) }}">
-<img src="{{ url_for('static', filename='images/' + p.image) }}">
-<div class="product-info"><h2>{{ p.name }}</h2><p>{{ p.description }}</p><div class="price-row"><b>{{ p.price }}</b><span>View details</span></div></div>
-</a>
-{% endfor %}
-</div></section>
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════
+   PAGE HERO
+═══════════════════════════════════════ */
+.shop-hero {
+  background: linear-gradient(135deg, var(--warm) 0%, var(--cream) 100%);
+  padding: 48px clamp(16px,5vw,80px) 32px;
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.shop-hero::after {
+  content: '🧶';
+  position: absolute; right: 5%; top: 50%; transform: translateY(-50%);
+  font-size: 120px; opacity: .06; pointer-events: none;
+}
+.shop-hero-inner { max-width: 1200px; margin: 0 auto; }
+.shop-breadcrumb {
+  display: flex; gap: 6px; font-size: .78rem;
+  color: var(--muted); margin-bottom: 14px; align-items: center;
+}
+.shop-breadcrumb a { transition: color .2s; }
+.shop-breadcrumb a:hover { color: var(--rose); }
+.shop-breadcrumb .sep { opacity: .4; }
+.shop-hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  color: var(--brown); margin-bottom: 6px;
+}
+.shop-hero p { font-size: .92rem; color: var(--muted); margin-bottom: 28px; }
+
+.search-bar-wrap {
+  display: flex; max-width: 520px;
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-s);
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-bar-wrap:focus-within {
+  border-color: var(--rose); box-shadow: 0 0 0 3px rgba(232,119,106,.12);
+}
+.search-bar-wrap input {
+  flex: 1; padding: 13px 18px; border: none; outline: none;
+  font-size: .92rem; font-family: 'DM Sans', sans-serif; color: var(--text); background: transparent;
+}
+.search-bar-wrap input::placeholder { color: #c9b5a8; }
+.search-btn {
+  padding: 0 20px; background: var(--rose); color: var(--white);
+  border: none; cursor: pointer; font-size: 1rem; transition: background .2s;
+}
+.search-btn:hover { background: var(--rose-d); }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+.shop-layout {
+  max-width: 1200px; margin: 0 auto;
+  padding: 36px clamp(16px,4vw,40px);
+  display: grid; grid-template-columns: 220px 1fr; gap: 28px; align-items: start;
+}
+
+/* ═══════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════ */
+.sidebar {
+  position: sticky; top: calc(var(--nav-h) + 16px);
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-l); padding: 22px; box-shadow: var(--shadow-s);
+}
+.sidebar-heading {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px;
+}
+.sidebar-heading span {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem; color: var(--brown); font-weight: 600;
+}
+.sidebar-title {
+  font-size: .68rem; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+}
+.filter-group { margin-bottom: 24px; }
+
+.cat-filter {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--r-s); font-size: .86rem;
+  color: var(--muted); cursor: pointer; transition: background .2s, color .2s;
+  text-decoration: none; border: none; background: none;
+  width: 100%; text-align: left;
+}
+.cat-filter:hover { background: var(--warm); color: var(--brown); }
+.cat-filter.active { background: var(--rose-l); color: var(--rose-d); font-weight: 600; }
+.cat-filter .cat-count {
+  margin-left: auto; font-size: .72rem; background: var(--warm);
+  padding: 1px 7px; border-radius: 10px; color: var(--muted);
+}
+.cat-filter.active .cat-count { background: rgba(232,119,106,.2); color: var(--rose-d); }
+
+.price-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.price-inputs input {
+  width: 100%; padding: 8px 10px; border: 1.5px solid var(--border);
+  border-radius: var(--r-s); font-size: .82rem; outline: none;
+  color: var(--text); font-family: 'DM Sans', sans-serif; transition: border-color .2s;
+}
+.price-inputs input:focus { border-color: var(--rose); }
+.price-apply {
+  width: 100%; margin-top: 8px; padding: 8px;
+  background: var(--brown); color: var(--white); border: none;
+  border-radius: var(--r-s); font-size: .82rem; font-weight: 600; cursor: pointer; transition: background .2s;
+}
+.price-apply:hover { background: var(--rose-d); }
+.clear-filters {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 9px; border-radius: var(--r-s);
+  background: none; border: 1.5px solid var(--border);
+  font-size: .82rem; color: var(--muted); cursor: pointer; transition: all .2s; margin-top: 4px;
+  text-decoration: none;
+}
+.clear-filters:hover { border-color: var(--rose); color: var(--rose); }
+
+/* ═══════════════════════════════════════
+   TOOLBAR
+═══════════════════════════════════════ */
+.toolbar {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.filter-toggle-btn {
+  display: none; align-items: center; gap: 8px; padding: 9px 14px;
+  background: var(--white); border: 1.5px solid var(--border); border-radius: var(--r-s);
+  font-size: .85rem; font-weight: 500; color: var(--brown); cursor: pointer; transition: border-color .2s;
+}
+.filter-toggle-btn:hover { border-color: var(--rose); }
+.results-count { font-size: .88rem; color: var(--muted); margin-right: auto; }
+.results-count strong { color: var(--brown); }
+.sort-select {
+  padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--r-s);
+  font-size: .84rem; font-family: 'DM Sans', sans-serif; color: var(--text);
+  background: var(--white); outline: none; cursor: pointer; transition: border-color .2s;
+}
+.sort-select:focus { border-color: var(--rose); }
+.view-toggle { display: flex; background: var(--warm); border-radius: var(--r-s); padding: 3px; gap: 2px; }
+.view-btn {
+  width: 32px; height: 32px; border: none; border-radius: 6px;
+  background: transparent; cursor: pointer; font-size: .95rem;
+  transition: background .2s; color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+}
+.view-btn.active { background: var(--white); color: var(--brown); box-shadow: 0 1px 4px rgba(92,61,46,.1); }
+
+.active-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; background: var(--rose-l);
+  color: var(--rose-d); border-radius: 20px; font-size: .78rem; font-weight: 600;
+}
+.filter-chip button {
+  background: none; border: none; cursor: pointer; color: inherit;
+  font-size: .85rem; padding: 0; line-height: 1; transition: transform .2s;
+}
+.filter-chip button:hover { transform: scale(1.2); }
+
+/* ═══════════════════════════════════════
+   GRID VIEW
+═══════════════════════════════════════ */
+.products-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px;
+}
+.product-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-l);
+  overflow: hidden; transition: box-shadow var(--transition), transform var(--transition);
+  text-decoration: none; color: inherit; display: flex; flex-direction: column;
+}
+.product-card:hover { box-shadow: var(--shadow-m); transform: translateY(-5px); }
+.card-img-wrap { aspect-ratio: 1; overflow: hidden; position: relative; background: var(--warm); flex-shrink: 0; }
+.card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.product-card:hover .card-img-wrap img { transform: scale(1.08); }
+.card-badge {
+  position: absolute; top: 10px; left: 10px;
+  font-size: .65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; padding: 3px 9px; border-radius: 20px;
+}
+.badge-new     { background: var(--rose); color: #fff; }
+.badge-popular { background: var(--brown); color: #fff; }
+.badge-low     { background: #f59e0b; color: #fff; }
+.badge-out     { background: #6b7280; color: #fff; }
+.card-wishlist {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px;
+  border-radius: 50%; background: rgba(255,255,255,.9); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: .9rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1); transition: transform .2s, background .2s; z-index: 2;
+}
+.card-wishlist:hover { transform: scale(1.15); background: var(--rose-l); }
+.card-body { padding: 14px 16px 18px; flex: 1; display: flex; flex-direction: column; }
+.card-cat { font-size: .68rem; font-weight: 700; color: var(--rose); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 3px; }
+.card-name { font-family: 'Playfair Display', serif; font-size: .98rem; color: var(--brown); margin-bottom: 5px; line-height: 1.3; }
+.card-desc { font-size: .79rem; color: var(--muted); line-height: 1.5; margin-bottom: 12px; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card-price { font-size: .95rem; font-weight: 700; color: var(--brown); }
+.card-price small { font-size: .7rem; font-weight: 400; color: var(--muted); }
+.card-stock { font-size: .72rem; color: var(--muted); }
+.card-stock.low { color: #f59e0b; font-weight: 600; }
+.card-btn {
+  padding: 6px 13px; border-radius: 20px; background: var(--rose); color: #fff;
+  border: none; cursor: pointer; font-size: .78rem; font-weight: 600;
+  transition: background .2s, transform .2s; white-space: nowrap;
+}
+.card-btn:hover { background: var(--rose-d); transform: scale(1.05); }
+.card-btn:disabled { background: #d1d5db; cursor: not-allowed; transform: none; }
+
+/* ═══════════════════════════════════════
+   LIST VIEW
+═══════════════════════════════════════ */
+.products-list { display: flex; flex-direction: column; gap: 14px; }
+.product-list-item {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-l);
+  overflow: hidden; display: grid; grid-template-columns: 130px 1fr auto; gap: 0;
+  transition: box-shadow var(--transition), transform var(--transition);
+  text-decoration: none; color: inherit;
+}
+.product-list-item:hover { box-shadow: var(--shadow-m); transform: translateY(-2px); }
+.list-img { aspect-ratio: 1; overflow: hidden; background: var(--warm); }
+.list-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+.product-list-item:hover .list-img img { transform: scale(1.07); }
+.list-body { padding: 18px 22px; display: flex; flex-direction: column; justify-content: center; }
+.list-cat { font-size: .7rem; font-weight: 700; color: var(--rose); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.list-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--brown); margin-bottom: 6px; }
+.list-desc { font-size: .84rem; color: var(--muted); line-height: 1.6; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.list-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.list-tag { font-size: .72rem; padding: 2px 9px; background: var(--warm); color: var(--muted); border-radius: 20px; }
+.list-actions { padding: 18px 18px 18px 0; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 10px; }
+.list-price { font-size: 1.15rem; font-weight: 700; color: var(--brown); text-align: right; }
+.list-price small { display: block; font-size: .72rem; font-weight: 400; color: var(--muted); }
+.list-btn { padding: 9px 18px; background: var(--rose); color: #fff; border: none; border-radius: 20px; cursor: pointer; font-size: .84rem; font-weight: 600; transition: background .2s; white-space: nowrap; }
+.list-btn:hover { background: var(--rose-d); }
+
+/* ═══════════════════════════════════════
+   EMPTY + OVERLAY
+═══════════════════════════════════════ */
+.no-results { text-align: center; padding: 80px 20px; grid-column: 1/-1; }
+.no-results .nr-icon { font-size: 3rem; margin-bottom: 16px; }
+.no-results h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--brown); margin-bottom: 8px; }
+.no-results p  { font-size: .88rem; color: var(--muted); margin-bottom: 24px; }
+.sidebar-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.4); backdrop-filter: blur(2px); }
+.sidebar-overlay.open { display: block; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .shop-layout { grid-template-columns: 1fr; }
+  .sidebar {
+    display: none; position: fixed; top: 0; left: 0; bottom: 0; z-index: 600;
+    width: 280px; border-radius: 0; overflow-y: auto;
+    transform: translateX(-100%); transition: transform .35s ease;
+  }
+  .sidebar.drawer-open { display: block; transform: translateX(0); }
+  .filter-toggle-btn { display: flex; }
+}
+@media (max-width: 600px) {
+  .products-grid { grid-template-columns: repeat(2,1fr); gap: 12px; }
+  .product-list-item { grid-template-columns: 100px 1fr; }
+  .list-actions { display: none; }
+}
+@media (max-width: 380px) {
+  .products-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="shop-hero">
+  <div class="shop-hero-inner">
+    <div class="shop-breadcrumb">
+      <a href="/">Home</a><span class="sep">›</span>
+      <span>{% if selected_cat %}{{ selected_cat }}{% elif search %}Search{% else %}Products{% endif %}</span>
+    </div>
+    <h1>{% if search %}Results for "{{ search }}"{% elif selected_cat %}{{ selected_cat }}{% else %}All Products{% endif %}</h1>
+    <p>Handmade with love — each piece is customised just for you</p>
+    <form method="GET" action="/products" class="search-bar-wrap">
+      {% if selected_cat %}<input type="hidden" name="category" value="{{ selected_cat }}">{% endif %}
+      <input type="text" name="q" value="{{ search }}" placeholder="Search keychains, gifts…" autocomplete="off">
+      <button type="submit" class="search-btn">🔍</button>
+    </form>
+  </div>
+</div>
+
+<div class="shop-layout">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeFilters()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-heading">
+      <span>Filters</span>
+      <button onclick="closeFilters()" id="close-filters-btn"
+              style="display:none;background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--muted);">✕</button>
+    </div>
+
+    <div class="filter-group">
+      <div class="sidebar-title">Category</div>
+      <a href="/products{% if search %}?q={{ search }}{% endif %}"
+         class="cat-filter {% if not selected_cat %}active{% endif %}">
+        All Products
+      </a>
+      {% for cat in categories %}
+      <a href="/products?category={{ cat.category }}{% if search %}&q={{ search }}{% endif %}"
+         class="cat-filter {% if selected_cat == cat.category %}active{% endif %}">
+        {{ cat.category }}
+      </a>
+      {% endfor %}
+    </div>
+
+    <div class="filter-group">
+      <div class="sidebar-title">Price Range</div>
+      <form method="GET" action="/products">
+        {% if selected_cat %}<input type="hidden" name="category" value="{{ selected_cat }}">{% endif %}
+        {% if search %}<input type="hidden" name="q" value="{{ search }}">{% endif %}
+        <div class="price-inputs">
+          <input type="number" name="min_price" placeholder="₹ Min" value="{{ request.args.get('min_price','') }}" min="0">
+          <input type="number" name="max_price" placeholder="₹ Max" value="{{ request.args.get('max_price','') }}" min="0">
+        </div>
+        <button type="submit" class="price-apply">Apply</button>
+      </form>
+    </div>
+
+    {% if selected_cat or search or request.args.get('min_price') or request.args.get('max_price') %}
+    <a href="/products" class="clear-filters">✕ Clear Filters</a>
+    {% endif %}
+  </aside>
+
+  <!-- PRODUCT AREA -->
+  <div class="products-area">
+    <div class="toolbar">
+      <button class="filter-toggle-btn" onclick="openFilters()">
+        ⚙️ Filters
+        {% if selected_cat or search %}
+        <span style="background:var(--rose);color:#fff;border-radius:10px;padding:1px 7px;font-size:.7rem;">●</span>
+        {% endif %}
+      </button>
+      <span class="results-count"><strong>{{ products|length }}</strong> item{{ 's' if products|length != 1 }}</span>
+      <select class="sort-select" onchange="sortProducts(this.value)">
+        <option value="default">Sort: Default</option>
+        <option value="price-asc">Price: Low → High</option>
+        <option value="price-desc">Price: High → Low</option>
+        <option value="name-asc">Name: A → Z</option>
+      </select>
+      <div class="view-toggle">
+        <button class="view-btn active" id="grid-btn" onclick="setView('grid')" title="Grid">⊞</button>
+        <button class="view-btn" id="list-btn" onclick="setView('list')" title="List">☰</button>
+      </div>
+    </div>
+
+    {% if selected_cat or search %}
+    <div class="active-filters">
+      {% if selected_cat %}
+      <span class="filter-chip">{{ selected_cat }}
+        <button onclick="window.location='/products{% if search %}?q={{ search }}{% endif %}'">✕</button>
+      </span>
+      {% endif %}
+      {% if search %}
+      <span class="filter-chip">"{{ search }}"
+        <button onclick="window.location='/products{% if selected_cat %}?category={{ selected_cat }}{% endif %}'">✕</button>
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- GRID -->
+    <div class="products-grid" id="products-grid">
+      {% for p in products %}
+      <a href="/product/{{ p.id }}" class="product-card" data-price="{{ p.price }}" data-name="{{ p.name }}">
+        <div class="card-img-wrap">
+          <img src="/static/images/{{ p.image }}" alt="{{ p.name }}" loading="lazy">
+          {% if p.stock == 0 %}
+            <span class="card-badge badge-out">Sold Out</span>
+          {% elif p.stock <= 5 %}
+            <span class="card-badge badge-low">Low Stock</span>
+          {% elif loop.index <= 2 %}
+            <span class="card-badge badge-popular">Popular</span>
+          {% else %}
+            <span class="card-badge badge-new">New</span>
+          {% endif %}
+          {% if session.user_id %}
+          <button class="card-wishlist" onclick="wishlistToggle(event,'{{ p.id }}',this)">🤍</button>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          <div class="card-cat">{{ p.category }}</div>
+          <div class="card-name">{{ p.name }}</div>
+          <div class="card-desc">{{ p.description }}</div>
+          <div class="card-footer">
+            <div>
+              <div class="card-price">₹{{ p.price }}<small>onwards</small></div>
+              <div class="card-stock {% if p.stock <= 5 and p.stock > 0 %}low{% endif %}">
+                {% if p.stock == 0 %}Out of stock
+                {% elif p.stock <= 5 %}Only {{ p.stock }} left!
+                {% else %}In Stock{% endif %}
+              </div>
+            </div>
+            <button class="card-btn" {% if p.stock == 0 %}disabled{% endif %}
+                    onclick="quickOrder(event,'{{ p.id }}')">
+              {% if p.stock == 0 %}Sold Out{% else %}Order →{% endif %}
+            </button>
+          </div>
+        </div>
+      </a>
+      {% else %}
+      <div class="no-results">
+        <div class="nr-icon">🔍</div>
+        <h3>No products found</h3>
+        <p>Try a different search or clear filters.</p>
+        <a href="/products" class="btn btn-primary">View All</a>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- LIST -->
+    <div class="products-list" id="products-list" style="display:none;">
+      {% for p in products %}
+      <a href="/product/{{ p.id }}" class="product-list-item" data-price="{{ p.price }}" data-name="{{ p.name }}">
+        <div class="list-img">
+          <img src="/static/images/{{ p.image }}" alt="{{ p.name }}" loading="lazy">
+        </div>
+        <div class="list-body">
+          <div class="list-cat">{{ p.category }}</div>
+          <div class="list-name">{{ p.name }}</div>
+          <div class="list-desc">{{ p.description }}</div>
+          <div class="list-tags">
+            {% for tag in p.criteria.split('|')[:3] %}
+            <span class="list-tag">{{ tag.strip() }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="list-actions">
+          <div class="list-price">₹{{ p.price }}<small>per piece</small></div>
+          <button class="list-btn" {% if p.stock == 0 %}disabled style="background:#d1d5db;cursor:not-allowed"{% endif %}
+                  onclick="quickOrder(event,'{{ p.id }}')">
+            {% if p.stock == 0 %}Sold Out{% else %}Order Now →{% endif %}
+          </button>
+        </div>
+      </a>
+      {% else %}
+      <div class="no-results"><a href="/products" class="btn btn-primary">View All</a></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setView(v) {
+  const grid = document.getElementById('products-grid');
+  const list = document.getElementById('products-list');
+  grid.style.display = v==='grid' ? 'grid' : 'none';
+  list.style.display = v==='list' ? 'flex' : 'none';
+  document.getElementById('grid-btn').classList.toggle('active', v==='grid');
+  document.getElementById('list-btn').classList.toggle('active', v==='list');
+  localStorage.setItem('uce_view', v);
+}
+(function(){ const v = localStorage.getItem('uce_view'); if(v) setView(v); })();
+
+function sortProducts(val) {
+  const fns = {
+    'price-asc':  (a,b)=>+a.dataset.price - +b.dataset.price,
+    'price-desc': (a,b)=>+b.dataset.price - +a.dataset.price,
+    'name-asc':   (a,b)=>a.dataset.name.localeCompare(b.dataset.name),
+    'default':    ()=>0
+  };
+  ['products-grid','products-list'].forEach(id=>{
+    const c = document.getElementById(id);
+    Array.from(c.children).filter(e=>e.dataset.price).sort(fns[val]||fns.default).forEach(e=>c.appendChild(e));
+  });
+}
+
+function openFilters() {
+  document.getElementById('sidebar').classList.add('drawer-open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+  document.getElementById('close-filters-btn').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function closeFilters() {
+  document.getElementById('sidebar').classList.remove('drawer-open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function wishlistToggle(e,pid,btn) {
+  e.preventDefault(); e.stopPropagation();
+  fetch('/wishlist/toggle/'+pid).then(r=>r.json()).then(d=>{
+    btn.textContent = d.status==='added' ? '❤️' : '🤍';
+  });
+}
+
+function quickOrder(e,pid) {
+  e.preventDefault(); e.stopPropagation();
+  window.location.href = '/product/'+pid+'#order';
+}
+
+// Staggered fade-in on cards
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; }});
+},{threshold:0.08});
+document.querySelectorAll('.product-card,.product-list-item').forEach((el,i)=>{
+  el.style.cssText += `opacity:0;transform:translateY(20px);transition:opacity .45s ease ${i*.06}s,transform .45s ease ${i*.06}s,box-shadow .25s,border-color .25s`;
+  obs.observe(el);
+});
+</script>
 {% endblock %}

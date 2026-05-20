@@ -1,27 +1,493 @@
 {% extends "base.html" %}
+{% block title %}Track Your Order — UrCostome Edit{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════
+   TRACK PAGE
+═══════════════════════════════════════ */
+.track-page {
+  max-width: 860px; margin: 0 auto;
+  padding: 56px clamp(16px,4vw,40px) 80px;
+}
+
+/* ── Hero ── */
+.track-hero {
+  text-align: center; margin-bottom: 48px;
+}
+.track-hero .track-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose), var(--rose-d));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; margin: 0 auto 20px;
+  box-shadow: 0 8px 24px rgba(232,119,106,.35);
+  animation: floatIcon 3s ease-in-out infinite;
+}
+@keyframes floatIcon {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.track-hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  color: var(--brown); margin-bottom: 8px;
+}
+.track-hero p { font-size: .92rem; color: var(--muted); max-width: 400px; margin: 0 auto; }
+
+/* ── Search box ── */
+.track-search-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-xl); padding: 32px;
+  box-shadow: var(--shadow-s); margin-bottom: 40px;
+}
+.track-search-card h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem; color: var(--brown); margin-bottom: 6px;
+}
+.track-search-card p { font-size: .85rem; color: var(--muted); margin-bottom: 20px; }
+
+.track-form {
+  display: flex; gap: 0;
+  background: var(--cream); border: 1.5px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+.track-form:focus-within {
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px rgba(232,119,106,.12);
+}
+.track-form input {
+  flex: 1; padding: 14px 18px; border: none; outline: none;
+  font-size: .95rem; font-family: 'DM Sans', sans-serif;
+  color: var(--text); background: transparent;
+}
+.track-form input::placeholder { color: #c9b5a8; }
+.track-form button {
+  padding: 0 24px; background: var(--rose); color: #fff;
+  border: none; cursor: pointer; font-size: .9rem; font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  transition: background .2s; white-space: nowrap;
+}
+.track-form button:hover { background: var(--rose-d); }
+
+/* ── Not found ── */
+.not-found {
+  text-align: center; padding: 48px 20px;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-xl); animation: fadeUp .4s ease;
+}
+.not-found .nf-icon { font-size: 3rem; margin-bottom: 14px; }
+.not-found h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--brown); margin-bottom: 6px; }
+.not-found p  { font-size: .88rem; color: var(--muted); }
+
+/* ═══════════════════════════════════════
+   ORDER RESULT CARD
+═══════════════════════════════════════ */
+.order-result { animation: fadeUp .5s ease; }
+
+/* ── Header ── */
+.order-header {
+  background: linear-gradient(135deg, var(--brown) 0%, var(--brown-d) 100%);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 28px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px;
+}
+.order-id-block .order-label {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: rgba(255,255,255,.55); margin-bottom: 4px;
+}
+.order-id-block .order-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 700; color: #fff;
+}
+.order-date { font-size: .82rem; color: rgba(255,255,255,.6); margin-top: 2px; }
+
+.status-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 18px; border-radius: 24px; font-size: .82rem;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+}
+.status-pill .sp-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.sp-New       { background: rgba(59,130,246,.2);  color: #93c5fd; }
+.sp-Making    { background: rgba(245,158,11,.2);  color: #fcd34d; }
+.sp-Ready     { background: rgba(34,197,94,.2);   color: #86efac; }
+.sp-Shipped   { background: rgba(167,139,250,.2); color: #c4b5fd; }
+.sp-Delivered { background: rgba(74,222,128,.2);  color: #4ade80; }
+.sp-Cancelled { background: rgba(248,113,113,.2); color: #fca5a5; }
+
+/* ── Body ── */
+.order-body {
+  background: var(--white); border: 1px solid var(--border);
+  border-top: none; border-radius: 0 0 var(--r-xl) var(--r-xl);
+  overflow: hidden;
+}
+
+/* Product info strip */
+.product-strip {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 32px; border-bottom: 1px solid var(--border);
+  background: var(--warm);
+}
+.product-strip-img {
+  width: 60px; height: 60px; border-radius: 12px; overflow: hidden;
+  background: var(--border); flex-shrink: 0;
+}
+.product-strip-img img { width: 100%; height: 100%; object-fit: cover; }
+.ps-name { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--brown); margin-bottom: 3px; }
+.ps-meta { font-size: .82rem; color: var(--muted); }
+.ps-total { margin-left: auto; font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; color: var(--brown); }
+
+/* ═══════════════════════════════════════
+   TIMELINE
+═══════════════════════════════════════ */
+.timeline-wrap { padding: 32px 32px 24px; }
+.timeline-title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); margin-bottom: 28px;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 32px;
+}
+.timeline::before {
+  content: '';
+  position: absolute; top: 8px; left: 11px; bottom: 8px;
+  width: 2px; background: var(--border); border-radius: 2px;
+}
+
+.t-step {
+  position: relative; margin-bottom: 28px;
+  opacity: .35; transition: opacity .4s;
+}
+.t-step:last-child { margin-bottom: 0; }
+.t-step.done, .t-step.current { opacity: 1; }
+
+.t-dot {
+  position: absolute; left: -32px; top: 2px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--border); border: 3px solid var(--white);
+  box-shadow: 0 0 0 2px var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .65rem; transition: background .4s, box-shadow .4s;
+  z-index: 1;
+}
+.t-step.done .t-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px #22c55e, 0 0 0 4px rgba(34,197,94,.2);
+}
+.t-step.current .t-dot {
+  background: var(--rose);
+  box-shadow: 0 0 0 2px var(--rose), 0 0 0 4px rgba(232,119,106,.25);
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+.t-step.cancelled .t-dot { background: #ef4444; box-shadow: 0 0 0 2px #ef4444; }
+
+@keyframes pulseDot {
+  0%,100% { box-shadow: 0 0 0 2px var(--rose), 0 0 0 4px rgba(232,119,106,.25); }
+  50%      { box-shadow: 0 0 0 2px var(--rose), 0 0 0 8px rgba(232,119,106,.1); }
+}
+
+.t-content {}
+.t-label {
+  font-weight: 600; font-size: .9rem; color: var(--brown); margin-bottom: 3px;
+}
+.t-step.current .t-label { color: var(--rose); }
+.t-desc { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+.t-time { font-size: .75rem; color: var(--muted); margin-top: 4px; font-style: italic; }
+
+/* ── Tracking note ── */
+.tracking-note {
+  margin: 0 32px 24px; padding: 16px 18px;
+  background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+  border: 1px solid #bfdbfe; border-radius: var(--r-m);
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.tracking-note .tn-icon { font-size: 1.1rem; flex-shrink: 0; }
+.tracking-note p { font-size: .86rem; color: #1e40af; line-height: 1.6; }
+
+/* ── Order details grid ── */
+.order-details-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0; border-top: 1px solid var(--border);
+}
+.od-block {
+  padding: 20px 32px; border-right: 1px solid var(--border);
+}
+.od-block:nth-child(even) { border-right: none; }
+.od-block:nth-child(n+3) { border-top: 1px solid var(--border); }
+.od-label {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin-bottom: 6px;
+}
+.od-value { font-size: .88rem; color: var(--text); line-height: 1.6; font-weight: 500; }
+
+/* ── Actions ── */
+.order-actions {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  padding: 20px 32px; border-top: 1px solid var(--border);
+  background: var(--warm);
+}
+.action-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 18px; border-radius: 10px; font-size: .84rem;
+  font-weight: 600; cursor: pointer; border: none; transition: all .2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.action-btn.primary { background: var(--rose); color: #fff; box-shadow: 0 3px 12px rgba(232,119,106,.3); }
+.action-btn.primary:hover { background: var(--rose-d); transform: translateY(-1px); }
+.action-btn.ghost { background: var(--white); color: var(--brown); border: 1.5px solid var(--border); }
+.action-btn.ghost:hover { border-color: var(--brown); }
+.action-btn.wa { background: #25d366; color: #fff; }
+.action-btn.wa:hover { background: #1db954; transform: translateY(-1px); }
+
+/* ═══════════════════════════════════════
+   NO ORDER STATE
+═══════════════════════════════════════ */
+.track-tips {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 16px;
+  margin-top: 32px;
+}
+.tip-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-l);
+  padding: 20px; display: flex; align-items: flex-start; gap: 14px;
+}
+.tip-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--rose-l); display: flex; align-items: center;
+  justify-content: center; font-size: 1.1rem; flex-shrink: 0;
+}
+.tip-text h4 { font-size: .88rem; font-weight: 600; color: var(--brown); margin-bottom: 3px; }
+.tip-text p  { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width: 640px) {
+  .order-header { flex-direction: column; align-items: flex-start; }
+  .order-details-grid { grid-template-columns: 1fr; }
+  .od-block { border-right: none; }
+  .od-block:nth-child(n+2) { border-top: 1px solid var(--border); }
+  .product-strip { flex-wrap: wrap; }
+  .ps-total { margin-left: 0; }
+  .timeline-wrap, .order-actions, .od-block, .tracking-note { padding-left: 20px; padding-right: 20px; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="track-page">
 
-<section class="center-page">
-  <div class="message-card">
+  <!-- Hero -->
+  <div class="track-hero reveal">
+    <div class="track-icon">📍</div>
     <h1>Track Your Order</h1>
-    <p>Enter your Order ID to check your order status.</p>
-
-    <form method="POST" class="order-form">
-      <input type="number" name="order_id" placeholder="Enter Order ID" required>
-      <button class="btn primary" type="submit">Track Order</button>
-    </form>
-
-    {% if order %}
-      <div class="details-box">
-        <h3>Order #{{ order.id }}</h3>
-        <p><b>Name:</b> {{ order.customer_name }}</p>
-        <p><b>Product:</b> {{ order.product }}</p>
-        <p><b>Status:</b> {{ order.status }}</p>
-      </div>
-    {% elif request.method == "POST" %}
-      <p>No order found with this ID.</p>
-    {% endif %}
+    <p>Enter your Order ID to see real-time status of your handmade piece</p>
   </div>
-</section>
 
+  <!-- Search Card -->
+  <div class="track-search-card reveal">
+    <h2>Find Your Order</h2>
+    <p>Your Order ID was shown on the confirmation page and sent via WhatsApp/email</p>
+    <form method="POST" class="track-form">
+      <input type="number" name="order_id"
+             value="{{ order.id if order else request.form.get('order_id','') }}"
+             placeholder="Enter Order ID e.g. 42" min="1" required>
+      <button type="submit">Track →</button>
+    </form>
+  </div>
+
+  <!-- ── ORDER NOT FOUND ── -->
+  {% if request.method == 'POST' and not order %}
+  <div class="not-found reveal">
+    <div class="nf-icon">🔍</div>
+    <h3>Order Not Found</h3>
+    <p>We couldn't find an order with that ID. Double-check the number and try again, or contact us on Instagram.</p>
+  </div>
+  {% endif %}
+
+  <!-- ── ORDER FOUND ── -->
+  {% if order %}
+  {% set statuses = ['New', 'Making', 'Ready', 'Shipped', 'Delivered'] %}
+  {% set status_idx = statuses.index(order.status) if order.status in statuses else -1 %}
+
+  <div class="order-result">
+
+    <!-- Header -->
+    <div class="order-header">
+      <div class="order-id-block">
+        <div class="order-label">Order ID</div>
+        <div class="order-num">#{{ order.id }}</div>
+        <div class="order-date">Placed on {{ order.created_at }}</div>
+      </div>
+      <span class="status-pill sp-{{ order.status }}">
+        <span class="sp-dot"></span>
+        {{ order.status }}
+      </span>
+    </div>
+
+    <div class="order-body">
+
+      <!-- Product Strip -->
+      <div class="product-strip">
+        <div class="product-strip-img">
+          <img src="/static/images/{{ order.product_id }}.jpeg"
+               alt="{{ order.product_name }}"
+               onerror="this.src='/static/images/bow.jpeg'">
+        </div>
+        <div>
+          <div class="ps-name">{{ order.product_name }}</div>
+          <div class="ps-meta">Qty: {{ order.quantity }} × ₹{{ order.unit_price }}</div>
+        </div>
+        <div class="ps-total">₹{{ order.total_price }}</div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline-wrap">
+        <div class="timeline-title">Order Journey</div>
+        <div class="timeline">
+
+          {% set steps = [
+            ('New',       '📋', 'Order Received',   'Your order has been received and is being reviewed.'),
+            ('Making',    '🧶', 'Being Crafted',     'Our artisan is handcrafting your piece with care.'),
+            ('Ready',     '✅', 'Ready to Ship',     'Your order is packed beautifully and ready for dispatch.'),
+            ('Shipped',   '🚚', 'Out for Delivery',  'Your package is on its way to you!'),
+            ('Delivered', '🎉', 'Delivered',         'Your order has been delivered. Enjoy your handmade piece!'),
+          ] %}
+
+          {% if order.status == 'Cancelled' %}
+          <div class="t-step cancelled">
+            <div class="t-dot">✕</div>
+            <div class="t-content">
+              <div class="t-label" style="color:#ef4444;">Order Cancelled</div>
+              <div class="t-desc">This order has been cancelled. Contact us for more info.</div>
+              {% if order.updated_at %}<div class="t-time">{{ order.updated_at }}</div>{% endif %}
+            </div>
+          </div>
+          {% else %}
+          {% for s_key, s_icon, s_label, s_desc in steps %}
+            {% set sidx = loop.index0 %}
+            {% if sidx < status_idx %}
+              {% set step_class = 'done' %}
+            {% elif sidx == status_idx %}
+              {% set step_class = 'current' %}
+            {% else %}
+              {% set step_class = '' %}
+            {% endif %}
+          <div class="t-step {{ step_class }}">
+            <div class="t-dot">{% if sidx < status_idx %}✓{% else %}{{ s_icon }}{% endif %}</div>
+            <div class="t-content">
+              <div class="t-label">{{ s_label }}</div>
+              <div class="t-desc">{{ s_desc }}</div>
+              {% if sidx == status_idx and order.updated_at %}
+              <div class="t-time">Last updated: {{ order.updated_at }}</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+          {% endif %}
+
+        </div>
+      </div>
+
+      <!-- Admin tracking note -->
+      {% if order.tracking_note %}
+      <div class="tracking-note">
+        <span class="tn-icon">💬</span>
+        <p><strong>Update from us:</strong> {{ order.tracking_note }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Order Details -->
+      <div class="order-details-grid">
+        <div class="od-block">
+          <div class="od-label">Customer</div>
+          <div class="od-value">{{ order.customer_name }}</div>
+        </div>
+        <div class="od-block">
+          <div class="od-label">Contact</div>
+          <div class="od-value">{{ order.contact }}</div>
+        </div>
+        <div class="od-block">
+          <div class="od-label">Delivery Address</div>
+          <div class="od-value">{{ order.address }}</div>
+        </div>
+        <div class="od-block">
+          <div class="od-label">Customisation</div>
+          <div class="od-value">{{ order.details or 'None specified' }}</div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="order-actions">
+        <a href="https://wa.me/?text={{ ('Hi! I have a query about Order #' ~ order.id ~ ' for ' ~ order.product_name)|urlencode }}"
+           target="_blank" class="action-btn wa">
+          💬 WhatsApp Us
+        </a>
+        <a href="/products" class="action-btn ghost">🛍 Shop More</a>
+        <button class="action-btn ghost" onclick="window.print()">🖨 Print</button>
+      </div>
+
+    </div><!-- /order-body -->
+  </div><!-- /order-result -->
+
+  {% else %}
+
+  <!-- Tips when no order tracked yet -->
+  <div class="track-tips">
+    <div class="tip-card reveal reveal-delay-1">
+      <div class="tip-icon">📧</div>
+      <div class="tip-text">
+        <h4>Check Your Email</h4>
+        <p>We send your Order ID to your email right after you place an order.</p>
+      </div>
+    </div>
+    <div class="tip-card reveal reveal-delay-2">
+      <div class="tip-icon">📱</div>
+      <div class="tip-text">
+        <h4>Check WhatsApp</h4>
+        <p>We confirm every order via WhatsApp with your Order ID included.</p>
+      </div>
+    </div>
+    <div class="tip-card reveal reveal-delay-3">
+      <div class="tip-icon">👤</div>
+      <div class="tip-text">
+        <h4>My Profile</h4>
+        <p>Logged-in customers can view all their orders from the profile page.</p>
+      </div>
+    </div>
+    <div class="tip-card reveal reveal-delay-4">
+      <div class="tip-icon">📸</div>
+      <div class="tip-text">
+        <h4>Contact Us</h4>
+        <p>DM us on Instagram @_urcostumedits_ and we'll help you instantly.</p>
+      </div>
+    </div>
+  </div>
+
+  {% if session.user_id %}
+  <div style="text-align:center;margin-top:40px;">
+    <a href="/profile#orders" class="btn btn-primary">View My Orders →</a>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Animate timeline steps one by one
+document.querySelectorAll('.t-step.done, .t-step.current').forEach((el, i) => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateX(-10px)';
+  setTimeout(() => {
+    el.style.transition = 'opacity .45s ease, transform .45s ease';
+    el.style.opacity = '1';
+    el.style.transform = 'translateX(0)';
+  }, 300 + i * 150);
+});
+</script>
 {% endblock %}

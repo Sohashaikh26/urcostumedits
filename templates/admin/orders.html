@@ -1,0 +1,550 @@
+
+{% block title %}Manage Orders — Admin{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   ADMIN SHELL TOKENS  (same as dashboard)
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --rose:   #e8776a; --rose-d: #d4564a; --rose-l: #f5e8e6;
+  --cream:  #fdf6f0; --warm:   #f5ece3;
+  --brown:  #5c3d2e; --brown-d: #3d1f10;
+  --text:   #2a1a12; --muted:  #9e8070; --border: #e8d8cc;
+  --white:  #ffffff;
+  --sidebar-w: 240px;
+  --header-h:  60px;
+  --shadow-s: 0 2px 12px rgba(92,61,46,.09);
+  --shadow-m: 0 8px 28px rgba(92,61,46,.12);
+  --r: 14px; --r-l: 18px; --r-xl: 22px; --r-m: 10px;
+}
+html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+img { display: block; max-width: 100%; }
+
+/* ── SIDEBAR (identical to dashboard) ── */
+.admin-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sidebar-w); z-index: 200;
+  background: linear-gradient(180deg, var(--brown-d) 0%, var(--brown) 100%);
+  display: flex; flex-direction: column;
+  transition: transform .3s ease;
+  overflow-y: auto;
+}
+.sidebar-brand {
+  padding: 22px 20px 18px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-brand img { width: 32px; height: 32px; border-radius: 8px; }
+.sidebar-brand-text .sb-title { font-family: 'Playfair Display', serif; font-size: .95rem; color: #fff; font-weight: 600; }
+.sidebar-brand-text .sb-sub   { font-size: .68rem; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .06em; }
+
+.sidebar-nav { flex: 1; padding: 16px 10px; }
+.nav-section-label {
+  font-size: .62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: rgba(255,255,255,.3);
+  padding: 12px 12px 6px; margin-top: 8px;
+}
+.nav-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; margin-bottom: 2px;
+  font-size: .86rem; color: rgba(255,255,255,.65);
+  transition: background .2s, color .2s;
+}
+.nav-link:hover  { background: rgba(255,255,255,.1); color: #fff; }
+.nav-link.active { background: rgba(232,119,106,.25); color: #fff; }
+.nav-link.active .nl-icon { color: var(--rose); }
+.nl-icon { font-size: 1rem; width: 22px; text-align: center; flex-shrink: 0; }
+.nl-badge {
+  margin-left: auto; background: var(--rose); color: #fff;
+  font-size: .62rem; font-weight: 700; padding: 1px 7px;
+  border-radius: 10px; min-width: 20px; text-align: center;
+}
+.sidebar-footer {
+  padding: 16px 10px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-footer .nav-link { color: rgba(255,255,255,.45); }
+.sidebar-footer .nav-link:hover { color: #fff; }
+
+/* ── HEADER (identical to dashboard) ── */
+.admin-header {
+  position: fixed; top: 0; left: var(--sidebar-w); right: 0; z-index: 100;
+  height: var(--header-h);
+  background: rgba(253,246,240,.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+}
+.header-left  { display: flex; align-items: center; gap: 12px; }
+.header-page-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--brown); font-weight: 600; }
+.header-breadcrumb { font-size: .78rem; color: var(--muted); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-notif {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--warm); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; position: relative; transition: background .2s;
+}
+.header-notif:hover { background: var(--rose-l); }
+.notif-dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--rose); border: 2px solid var(--cream);
+}
+.admin-user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--warm); border-radius: 22px; padding: 6px 14px 6px 8px;
+  font-size: .84rem; font-weight: 500; color: var(--brown);
+}
+.auc-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--brown), var(--brown-d));
+  color: #fff; font-size: .7rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.hamburger-admin {
+  display: none; background: none; border: none; cursor: pointer;
+  flex-direction: column; gap: 4px; padding: 6px;
+}
+.hamburger-admin span { display: block; width: 20px; height: 2px; background: var(--brown); border-radius: 2px; }
+
+/* ── MAIN AREA ── */
+.admin-main {
+  margin-left: var(--sidebar-w);
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
+.admin-content { padding: 32px 28px; }
+
+/* ── Sidebar overlay (mobile) ── */
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; z-index: 190;
+  background: rgba(0,0,0,.45);
+}
+.sidebar-overlay.open { display: block; }
+
+/* ═══════════════════════════════════════
+   ORDERS PAGE STYLES (unchanged)
+═══════════════════════════════════════ */
+.adm-hdr { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:24px; }
+.adm-title { font-family:'Playfair Display',serif; font-size:clamp(1.4rem,2.5vw,1.9rem); color:var(--brown); }
+.adm-sub { font-size:.82rem; color:var(--muted); margin-top:2px; }
+
+.filters-bar {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:#fff; border:1px solid var(--border); border-radius:var(--r-l);
+  padding:14px 18px; margin-bottom:20px; box-shadow:0 1px 6px rgba(92,61,46,.06);
+}
+.filter-search-wrap {
+  flex:1; min-width:200px; display:flex; gap:0;
+  background:var(--cream); border:1.5px solid var(--border);
+  border-radius:10px; overflow:hidden; transition:border-color .2s;
+}
+.filter-search-wrap:focus-within { border-color:var(--rose); }
+.filter-search-wrap input {
+  flex:1; padding:9px 14px; border:none; outline:none;
+  font-size:.86rem; font-family:'DM Sans',sans-serif; color:var(--text); background:transparent;
+}
+.filter-search-wrap input::placeholder { color:#c9b5a8; }
+.filter-search-wrap button {
+  padding:0 14px; background:var(--rose); color:#fff; border:none;
+  cursor:pointer; font-size:.9rem; transition:background .2s;
+}
+.filter-search-wrap button:hover { background:var(--rose-d); }
+
+.status-tabs { display:flex; gap:4px; flex-wrap:wrap; }
+.stab {
+  padding:7px 14px; border-radius:8px; font-size:.78rem; font-weight:600;
+  border:1.5px solid var(--border); background:#fff; color:var(--muted);
+  cursor:pointer; transition:all .2s; text-decoration:none; white-space:nowrap;
+}
+.stab:hover { border-color:var(--brown); color:var(--brown); }
+.stab.active { background:var(--brown); color:#fff; border-color:var(--brown); }
+
+.filter-count { font-size:.82rem; color:var(--muted); white-space:nowrap; margin-left:auto; }
+.filter-count strong { color:var(--brown); }
+
+.orders-panel {
+  background:#fff; border:1px solid var(--border); border-radius:var(--r-l); overflow:hidden;
+  box-shadow:0 1px 6px rgba(92,61,46,.06);
+}
+.tbl-wrap { overflow-x:auto; }
+.ord-tbl { width:100%; border-collapse:collapse; font-size:.83rem; }
+.ord-tbl th {
+  text-align:left; padding:10px 14px;
+  font-size:.67rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.08em; color:var(--muted); background:var(--warm);
+  border-bottom:1px solid var(--border); white-space:nowrap;
+}
+.ord-tbl td { padding:14px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+.ord-tbl tr:last-child td { border-bottom:none; }
+.ord-tbl tr:hover td { background:#fdfaf8; }
+
+.td-id     { font-weight:700; color:var(--brown); white-space:nowrap; }
+.td-date   { font-size:.76rem; color:var(--muted); white-space:nowrap; }
+.td-cust   { font-weight:600; }
+.td-contact{ font-size:.78rem; color:var(--muted); }
+.td-prod   { font-size:.8rem; max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.td-qty    { text-align:center; font-weight:600; color:var(--brown); }
+.td-price  { font-weight:700; color:var(--brown); white-space:nowrap; }
+.td-status { white-space:nowrap; }
+.stag {
+  display:inline-flex; align-items:center; gap:4px; padding:3px 10px;
+  border-radius:20px; font-size:.68rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.04em; white-space:nowrap;
+}
+.td-actions { white-space:nowrap; }
+.act-btn {
+  padding:5px 11px; border-radius:7px; font-size:.74rem; font-weight:600;
+  border:none; cursor:pointer; text-decoration:none; font-family:'DM Sans',sans-serif;
+  transition:all .15s; margin-right:4px;
+}
+.ab-edit   { background:var(--warm); color:var(--brown); }
+.ab-edit:hover { background:var(--border); }
+.ab-delete { background:#fff1f2; color:#9f1239; }
+.ab-delete:hover { background:#fecdd3; }
+
+.tbl-empty { text-align:center; padding:56px 20px; color:var(--muted); }
+.tbl-empty .em-icon { font-size:2.8rem; margin-bottom:12px; }
+.tbl-empty h3 { font-family:'Playfair Display',serif; color:var(--brown); font-size:1.1rem; margin-bottom:6px; }
+
+.modal-backdrop {
+  display:none; position:fixed; inset:0; z-index:1200;
+  background:rgba(42,26,18,.55); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-backdrop.open { display:flex; }
+.modal-box {
+  background:#fff; border-radius:var(--r-xl); padding:36px;
+  width:100%; max-width:500px; box-shadow:0 30px 80px rgba(42,26,18,.2);
+  animation:fadeUp .3s ease; max-height:90vh; overflow-y:auto;
+}
+.modal-box h2 { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--brown); margin-bottom:18px; }
+.mf { margin-bottom:16px; }
+.mf label { display:block; font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--brown); margin-bottom:5px; }
+.mf select, .mf textarea, .mf input {
+  width:100%; padding:10px 13px; border:1.5px solid var(--border);
+  border-radius:9px; font-size:.87rem; font-family:'DM Sans',sans-serif;
+  color:var(--text); background:var(--cream); outline:none; transition:border-color .2s;
+}
+.mf select:focus, .mf textarea:focus, .mf input:focus { border-color:var(--rose); background:#fff; }
+.mf textarea { resize:vertical; min-height:72px; }
+.modal-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.mi-block { background:var(--warm); border-radius:var(--r-m); padding:12px 14px; }
+.mi-lbl { font-size:.64rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700; margin-bottom:3px; }
+.mi-val { font-size:.85rem; color:var(--brown); font-weight:500; line-height:1.4; }
+.modal-footer { display:flex; gap:10px; margin-top:20px; }
+.mf-cancel {
+  flex:1; padding:11px; background:var(--warm); border:none; border-radius:10px;
+  font-size:.87rem; font-weight:600; color:var(--muted); cursor:pointer; transition:background .2s;
+}
+.mf-cancel:hover { background:var(--border); }
+.mf-save {
+  flex:2; padding:11px;
+  background:linear-gradient(135deg,var(--rose),var(--rose-d));
+  color:#fff; border:none; border-radius:10px;
+  font-size:.87rem; font-weight:700; cursor:pointer;
+  box-shadow:0 4px 14px rgba(232,119,106,.35); transition:transform .2s;
+}
+.mf-save:hover { transform:translateY(-1px); }
+.confirm-modal { max-width:380px; text-align:center; }
+.confirm-modal .cm-icon { font-size:2.5rem; margin-bottom:12px; }
+.confirm-modal h3 { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--brown); margin-bottom:6px; }
+.confirm-modal p  { font-size:.86rem; color:var(--muted); margin-bottom:20px; }
+.cm-actions { display:flex; gap:10px; justify-content:center; }
+
+/* btn-ghost reuse */
+.btn { display:inline-flex; align-items:center; font-family:'DM Sans',sans-serif; font-weight:600; border-radius:10px; cursor:pointer; transition:all .2s; border:none; text-decoration:none; }
+.btn-ghost { background:var(--warm); color:var(--brown); border:1.5px solid var(--border); padding:8px 16px; font-size:.82rem; }
+.btn-ghost:hover { border-color:var(--brown); }
+.btn-sm { padding:8px 16px; font-size:.82rem; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+
+/* ── Responsive ── */
+@media (max-width:768px) {
+  .admin-sidebar { transform:translateX(-100%); }
+  .admin-sidebar.open { transform:translateX(0); }
+  .admin-main, .admin-header { margin-left:0; left:0; }
+  .hamburger-admin { display:flex; }
+  .admin-content { padding:20px 16px; }
+}
+@media (max-width:640px) { .filters-bar { flex-direction:column; align-items:stretch; } .filter-count { margin-left:0; } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ═══ SIDEBAR (dashboard-style) ═══ -->
+<aside class="admin-sidebar" id="admin-sidebar">
+  <div class="sidebar-brand">
+    <img src="/static/images/logo.png" alt="logo" onerror="this.style.display='none'">
+    <div class="sidebar-brand-text">
+      <div class="sb-title">UrCostome Edit</div>
+      <div class="sb-sub">Admin Panel</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a href="/admin" class="nav-link"><span class="nl-icon">📊</span> Dashboard</a>
+    <a href="/admin/orders" class="nav-link active">
+      <span class="nl-icon">📦</span> Orders
+      {% if new_orders | default(0) > 0 %}<span class="nl-badge">{{ new_orders }}</span>{% endif %}
+    </a>
+    <a href="/admin/products" class="nav-link"><span class="nl-icon">🧶</span> Products</a>
+    <a href="/admin/users"    class="nav-link"><span class="nl-icon">👥</span> Users</a>
+    <div class="nav-section-label">Store</div>
+    <a href="/"        target="_blank" class="nav-link"><span class="nl-icon">🌐</span> View Store</a>
+    <a href="/products" target="_blank" class="nav-link"><span class="nl-icon">🛍</span> Shop Page</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="nav-link" style="padding:8px 12px;gap:8px;">
+      <div style="width:30px;height:30px;border-radius:50%;background:rgba(232,119,106,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;">
+        {{ session.admin_name[0].upper() if session.admin_name else 'A' }}
+      </div>
+      <div>
+        <div style="font-size:.82rem;color:#fff;font-weight:500;">{{ session.admin_name }}</div>
+        <div style="font-size:.68rem;color:rgba(255,255,255,.4);">Administrator</div>
+      </div>
+    </div>
+    <a href="/admin/logout" class="nav-link" style="color:rgba(232,119,106,.8);">
+      <span class="nl-icon">🚪</span> Logout
+    </a>
+  </div>
+</aside>
+
+<!-- ═══ HEADER (dashboard-style) ═══ -->
+<header class="admin-header">
+  <div class="header-left">
+    <button class="hamburger-admin" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <div>
+      <div class="header-page-title">Orders</div>
+      <div class="header-breadcrumb">Admin / Orders</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="header-notif" title="Notifications">
+      🔔
+      {% if new_orders | default(0) > 0 %}<span class="notif-dot"></span>{% endif %}
+    </button>
+    <div class="admin-user-chip">
+      <div class="auc-avatar">{{ session.admin_name[0].upper() if session.admin_name else 'A' }}</div>
+      {{ session.admin_name }}
+    </div>
+  </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main class="admin-main">
+  <div class="admin-content">
+
+    <div class="adm-hdr">
+      <div>
+        <div class="adm-title">Orders</div>
+        <div class="adm-sub">Manage and update all customer orders</div>
+      </div>
+      <a href="/admin" class="btn btn-ghost btn-sm">← Dashboard</a>
+    </div>
+
+    <!-- FILTERS BAR -->
+    <div class="filters-bar">
+      <form method="GET" action="/admin/orders" class="filter-search-wrap" style="flex:1;max-width:320px;">
+        {% if selected_status %}
+        <input type="hidden" name="status" value="{{ selected_status }}">
+        {% endif %}
+        <input type="text" name="q" value="{{ search }}" placeholder="Search ID, name, phone…">
+        <button type="submit">🔍</button>
+      </form>
+      <div class="status-tabs">
+        {% for s in ['', 'New', 'Making', 'Ready', 'Shipped', 'Delivered', 'Cancelled'] %}
+        <a href="/admin/orders{% if s %}?status={{ s }}{% if search %}&q={{ search }}{% endif %}{% elif search %}?q={{ search }}{% endif %}"
+           class="stab {% if selected_status == s %}active{% endif %}">
+          {{ s or 'All' }}
+        </a>
+        {% endfor %}
+      </div>
+      <div class="filter-count">
+        <strong>{{ orders|length }}</strong> order{{ 's' if orders|length != 1 }}
+      </div>
+    </div>
+
+    <!-- ORDERS TABLE -->
+    <div class="orders-panel">
+      {% if orders %}
+      <div class="tbl-wrap">
+        <table class="ord-tbl">
+          <thead>
+            <tr>
+              <th>ID</th><th>Date</th><th>Customer</th><th>Product</th>
+              <th>Qty</th><th>Total</th><th>Status</th><th>Details</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+            <tr>
+              <td class="td-id">#{{ o.id }}</td>
+              <td class="td-date">{{ o.created_at }}</td>
+              <td>
+                <div class="td-cust">{{ o.customer_name }}</div>
+                <div class="td-contact">{{ o.contact }}</div>
+              </td>
+              <td class="td-prod" title="{{ o.product_name }}">{{ o.product_name }}</td>
+              <td class="td-qty">{{ o.quantity }}</td>
+              <td class="td-price">₹{{ o.total_price }}</td>
+              <td class="td-status">
+                <span class="stag status-{{ o.status }}">{{ o.status }}</span>
+              </td>
+              <td>
+                {% if o.details %}
+                <span style="font-size:.76rem;color:var(--muted);" title="{{ o.details }}">
+                  📝 {{ o.details[:30] }}{% if o.details|length > 30 %}…{% endif %}
+                </span>
+                {% else %}
+                <span style="color:var(--border);font-size:.76rem;">—</span>
+                {% endif %}
+              </td>
+              <td class="td-actions">
+                <button class="act-btn ab-edit"
+                  onclick="openEdit(
+                    {{ o.id }},'{{ o.status }}',
+                    '{{ (o.tracking_note or '')|replace("'","\\'") }}',
+                    '{{ o.customer_name|replace("'","\\'") }}',
+                    '{{ o.contact }}','{{ o.email or '' }}',
+                    '{{ o.address|replace("'","\\'")|replace("\n"," ") }}',
+                    '{{ o.product_name|replace("'","\\'") }}',
+                    {{ o.quantity }},{{ o.total_price }},
+                    '{{ (o.details or '')|replace("'","\\'") }}'
+                  )">✏ Edit</button>
+                <button class="act-btn ab-delete"
+                  onclick="confirmDelete({{ o.id }})">🗑</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="tbl-empty">
+        <div class="em-icon">📭</div>
+        <h3>No orders found</h3>
+        <p style="font-size:.84rem;">
+          {% if search or selected_status %}Try clearing the search or filters{% else %}No orders have been placed yet{% endif %}
+        </p>
+        {% if search or selected_status %}
+        <a href="/admin/orders" class="btn btn-ghost btn-sm" style="margin-top:14px;">Clear Filters</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</main>
+
+<!-- ═══ EDIT MODAL ═══ -->
+<div class="modal-backdrop" id="edit-modal" onclick="if(event.target===this)closeEdit()">
+  <div class="modal-box">
+    <h2>Update Order <span id="modal-order-id" style="color:var(--rose);"></span></h2>
+    <div class="modal-info-grid" id="modal-info-grid"></div>
+    <form method="POST" id="edit-form">
+      <div class="mf">
+        <label>Order Status</label>
+        <select name="status" id="edit-status">
+          {% for s in ['New','Making','Ready','Shipped','Delivered','Cancelled'] %}
+          <option value="{{ s }}">{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mf">
+        <label>Tracking Note / Message to Customer</label>
+        <textarea name="tracking_note" id="edit-note"
+                  placeholder="e.g. Shipped via India Post, tracking: XXXXX"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="mf-cancel" onclick="closeEdit()">Cancel</button>
+        <button type="submit" class="mf-save">✓ Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ DELETE CONFIRM MODAL ═══ -->
+<div class="modal-backdrop" id="delete-modal" onclick="if(event.target===this)closeDelete()">
+  <div class="modal-box confirm-modal">
+    <div class="cm-icon">🗑</div>
+    <h3>Delete Order?</h3>
+    <p>This will permanently remove the order. This action cannot be undone.</p>
+    <div class="cm-actions">
+      <button class="mf-cancel" style="flex:1;" onclick="closeDelete()">Cancel</button>
+      <form id="delete-form" method="POST" style="flex:2;">
+        <button type="submit"
+                style="width:100%;padding:11px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:.87rem;font-weight:700;cursor:pointer;">
+          Yes, Delete
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSidebar() {
+  document.getElementById('admin-sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+  document.body.style.overflow = document.getElementById('admin-sidebar').classList.contains('open') ? 'hidden' : '';
+}
+function closeSidebar() {
+  document.getElementById('admin-sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openEdit(id, status, note, name, contact, email, address, product, qty, total, details) {
+  document.getElementById('modal-order-id').textContent = '#' + id;
+  document.getElementById('edit-form').action = '/admin/orders/update/' + id;
+  document.getElementById('edit-status').value = status;
+  document.getElementById('edit-note').value = note;
+  document.getElementById('modal-info-grid').innerHTML = `
+    <div class="mi-block"><div class="mi-lbl">Customer</div><div class="mi-val">${name}</div></div>
+    <div class="mi-block"><div class="mi-lbl">Contact</div><div class="mi-val">${contact}<br><span style="font-size:.75rem;color:var(--muted);">${email}</span></div></div>
+    <div class="mi-block"><div class="mi-lbl">Product</div><div class="mi-val">${product} × ${qty}</div></div>
+    <div class="mi-block"><div class="mi-lbl">Total</div><div class="mi-val" style="color:var(--rose);font-weight:700;">₹${total}</div></div>
+    ${address ? `<div class="mi-block" style="grid-column:1/-1;"><div class="mi-lbl">Address</div><div class="mi-val">${address}</div></div>` : ''}
+    ${details ? `<div class="mi-block" style="grid-column:1/-1;"><div class="mi-lbl">Customisation</div><div class="mi-val">${details}</div></div>` : ''}
+  `;
+  document.getElementById('edit-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeEdit() {
+  document.getElementById('edit-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function confirmDelete(id) {
+  document.getElementById('delete-form').action = '/admin/orders/delete/' + id;
+  document.getElementById('delete-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDelete() {
+  document.getElementById('delete-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.querySelectorAll('.ord-tbl tbody tr').forEach((tr, i) => {
+  tr.style.opacity = '0';
+  tr.style.transform = 'translateY(10px)';
+  setTimeout(() => {
+    tr.style.transition = 'opacity .3s ease, transform .3s ease';
+    tr.style.opacity = '1'; tr.style.transform = 'translateY(0)';
+  }, 50 + i * 40);
+});
+</script>
+{% endblock %}
