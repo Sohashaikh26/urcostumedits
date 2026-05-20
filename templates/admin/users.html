@@ -1,29 +1,132 @@
-{% extends "base.html" %}
-{% block title %}Manage Customers — Admin{% endblock %}
-
-{% block extra_head %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customers — Admin | UrCostome Edit</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-.admin-layout{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - var(--nav-h));}
-.admin-sidebar{background:var(--brown-d);padding:24px 0;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto;z-index:10;}
-.admin-sidebar::-webkit-scrollbar{width:3px;}
-.sb-brand{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px;}
-.sb-badge{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);font-weight:700;margin-bottom:3px;}
-.sb-name{font-family:'Playfair Display',serif;font-size:1rem;color:#fff;}
-.sb-role{font-size:.72rem;color:var(--rose);font-weight:600;margin-top:2px;}
-.sb-section{padding:0 10px 4px;}
-.sb-section-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.22);font-weight:700;padding:10px 10px 5px;}
-.sb-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:.84rem;color:rgba(255,255,255,.6);text-decoration:none;transition:all .2s;margin-bottom:2px;}
-.sb-link:hover{background:rgba(255,255,255,.08);color:#fff;}
-.sb-link.active{background:var(--rose);color:#fff;}
-.sb-link .sl-i{font-size:.95rem;width:18px;text-align:center;flex-shrink:0;}
-.sb-sep{height:1px;background:rgba(255,255,255,.07);margin:10px 10px;}
-.admin-main{padding:32px clamp(14px,3vw,36px);background:#f8f4f1;}
-.adm-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
-.adm-title{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,2.5vw,1.9rem);color:var(--brown);}
-.adm-sub{font-size:.82rem;color:var(--muted);margin-top:2px;}
+/* ═══════════════════════════════════════════════
+   ADMIN BASE TOKENS (same as dashboard)
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --rose:   #e8776a; --rose-d: #d4564a; --rose-l: #f5e8e6;
+  --cream:  #fdf6f0; --warm:   #f5ece3;
+  --brown:  #5c3d2e; --brown-d:#3d1f10;
+  --text:   #2a1a12; --muted:  #9e8070; --border: #e8d8cc;
+  --white:  #ffffff;
+  --sidebar-w: 240px;
+  --header-h:  60px;
+  --shadow-s: 0 2px 12px rgba(92,61,46,.09);
+  --shadow-m: 0 8px 28px rgba(92,61,46,.12);
+  --r: 14px;
+}
+html,body { height: 100%; font-family: 'DM Sans',sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+img { display: block; max-width: 100%; }
 
+/* ═══════════════════════════════════════════════
+   SIDEBAR (identical to dashboard)
+═══════════════════════════════════════════════ */
+.admin-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w); z-index: 200;
+  background: linear-gradient(180deg, var(--brown-d) 0%, var(--brown) 100%);
+  display: flex; flex-direction: column;
+  transition: transform .3s ease;
+  overflow-y: auto;
+}
+.sidebar-brand {
+  padding: 22px 20px 18px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-brand img { width: 32px; height: 32px; border-radius: 8px; }
+.sidebar-brand-text .sb-title { font-family: 'Playfair Display',serif; font-size: .95rem; color: #fff; font-weight: 600; }
+.sidebar-brand-text .sb-sub   { font-size: .68rem; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .06em; }
+
+.sidebar-nav { flex: 1; padding: 16px 10px; }
+.nav-section-label {
+  font-size: .62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: rgba(255,255,255,.3);
+  padding: 12px 12px 6px; margin-top: 8px;
+}
+.nav-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px; margin-bottom: 2px;
+  font-size: .86rem; color: rgba(255,255,255,.65);
+  transition: background .2s, color .2s;
+}
+.nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
+.nav-link.active { background: rgba(232,119,106,.25); color: #fff; }
+.nav-link.active .nl-icon { color: var(--rose); }
+.nl-icon { font-size: 1rem; width: 22px; text-align: center; flex-shrink: 0; }
+.nl-badge {
+  margin-left: auto; background: var(--rose); color: #fff;
+  font-size: .62rem; font-weight: 700; padding: 1px 7px;
+  border-radius: 10px; min-width: 20px; text-align: center;
+}
+.sidebar-footer {
+  padding: 16px 10px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-footer .nav-link { color: rgba(255,255,255,.45); }
+.sidebar-footer .nav-link:hover { color: #fff; }
+
+/* ═══════════════════════════════════════════════
+   ADMIN HEADER (identical to dashboard)
+═══════════════════════════════════════════════ */
+.admin-header {
+  position: fixed; top: 0; left: var(--sidebar-w); right: 0; z-index: 100;
+  height: var(--header-h);
+  background: rgba(253,246,240,.95); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.header-page-title { font-family: 'Playfair Display',serif; font-size: 1.1rem; color: var(--brown); font-weight: 600; }
+.header-breadcrumb { font-size: .78rem; color: var(--muted); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.admin-user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--warm); border-radius: 22px; padding: 6px 14px 6px 8px;
+  font-size: .84rem; font-weight: 500; color: var(--brown);
+}
+.auc-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--brown), var(--brown-d));
+  color: #fff; font-size: .7rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.hamburger-admin {
+  display: none; background: none; border: none; cursor: pointer;
+  flex-direction: column; gap: 4px; padding: 6px;
+}
+.hamburger-admin span { display: block; width: 20px; height: 2px; background: var(--brown); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════
+   MAIN CONTENT (identical to dashboard)
+═══════════════════════════════════════════════ */
+.admin-main {
+  margin-left: var(--sidebar-w);
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
+.admin-content { padding: 32px 28px; }
+.content-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 28px;
+}
+.content-title { font-family: 'Playfair Display',serif; font-size: 1.6rem; color: var(--brown); }
+.content-sub { font-size: .85rem; color: var(--muted); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════════
+   USERS-SPECIFIC STYLES (unchanged from original)
+═══════════════════════════════════════════════ */
 .u-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:22px;}
-.u-stat{background:#fff;border:1px solid var(--border);border-radius:var(--r-l);padding:18px 16px;display:flex;align-items:center;gap:12px;}
+.u-stat{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px 16px;display:flex;align-items:center;gap:12px;}
 .u-stat-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
 .u-stat-val{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--brown);line-height:1;}
 .u-stat-lbl{font-size:.72rem;color:var(--muted);margin-top:2px;}
@@ -36,7 +139,7 @@
 .u-count{font-size:.83rem;color:var(--muted);margin-left:auto;}
 .u-count strong{color:var(--brown);}
 
-.u-panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:0 1px 6px rgba(92,61,46,.06);}
+.u-panel{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 6px rgba(92,61,46,.06);}
 .tbl-wrap{overflow-x:auto;}
 .u-tbl{width:100%;border-collapse:collapse;font-size:.83rem;}
 .u-tbl th{text-align:left;padding:10px 14px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--warm);border-bottom:1px solid var(--border);white-space:nowrap;}
@@ -66,64 +169,133 @@
 
 .modal-backdrop{display:none;position:fixed;inset:0;z-index:1200;background:rgba(42,26,18,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;}
 .modal-backdrop.open{display:flex;}
-.modal-box{background:#fff;border-radius:var(--r-xl);padding:32px;width:100%;max-width:500px;box-shadow:0 30px 80px rgba(42,26,18,.2);animation:fadeUp .3s ease;max-height:90vh;overflow-y:auto;}
+.modal-box{background:#fff;border-radius:var(--r);padding:32px;width:100%;max-width:500px;box-shadow:0 30px 80px rgba(42,26,18,.2);animation:fadeUp .3s ease;max-height:90vh;overflow-y:auto;}
 .modal-box h2{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--brown);margin-bottom:18px;}
-.um-header{display:flex;align-items:center;gap:14px;padding:16px;background:var(--warm);border-radius:var(--r-l);margin-bottom:18px;}
+.um-header{display:flex;align-items:center;gap:14px;padding:16px;background:var(--warm);border-radius:var(--r);margin-bottom:18px;}
 .um-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--rose),var(--rose-d));color:#fff;font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .um-nm{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--brown);}
 .um-em{font-size:.8rem;color:var(--muted);}
 .ud-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-.ud-b{background:var(--cream);border-radius:var(--r-m);padding:11px 13px;}
+.ud-b{background:var(--cream);border-radius:var(--r);padding:11px 13px;}
 .ud-l{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:2px;}
 .ud-v{font-size:.86rem;color:var(--brown);font-weight:500;}
 .mfooter{display:flex;gap:10px;margin-top:18px;}
 .mf-close{flex:1;padding:11px;background:var(--warm);border:none;border-radius:10px;font-size:.86rem;font-weight:600;color:var(--muted);cursor:pointer;}
 .mf-close:hover{background:var(--border);}
+.btn-primary{flex:2;display:flex;align-items:center;justify-content:center;padding:11px;background:linear-gradient(135deg,var(--rose),var(--rose-d));color:#fff;border-radius:10px;font-size:.86rem;font-weight:600;text-decoration:none;}
 
 .tbl-empty{text-align:center;padding:56px 20px;color:var(--muted);}
 .tbl-empty .em-icon{font-size:2.8rem;margin-bottom:12px;}
 .tbl-empty h3{font-family:'Playfair Display',serif;color:var(--brown);font-size:1.1rem;margin-bottom:6px;}
+.btn-ghost{display:inline-flex;align-items:center;padding:8px 16px;background:var(--white);border:1.5px solid var(--border);border-radius:10px;font-size:.82rem;font-weight:600;color:var(--brown);cursor:pointer;transition:all .2s;}
+.btn-ghost:hover{border-color:var(--rose);color:var(--rose);}
 
-@media(max-width:1000px){.admin-layout{grid-template-columns:1fr;}.admin-sidebar{display:none;}}
-@media(max-width:600px){.ud-grid{grid-template-columns:1fr;}}
+/* ═══════════════════════════════════════════════
+   RESPONSIVE (same as dashboard)
+═══════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .u-stats { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 768px) {
+  .admin-sidebar { transform: translateX(-100%); }
+  .admin-sidebar.open { transform: translateX(0); }
+  .admin-main, .admin-header { margin-left: 0; left: 0; }
+  .hamburger-admin { display: flex; }
+  .admin-content { padding: 20px 16px; }
+  .u-stats { grid-template-columns: repeat(2,1fr); gap: 12px; }
+}
+@media (max-width: 600px) {
+  .ud-grid { grid-template-columns: 1fr; }
+  .u-stats { grid-template-columns: 1fr; }
+}
+
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; z-index: 190;
+  background: rgba(0,0,0,.45);
+}
+.sidebar-overlay.open { display: block; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+.fade-in { animation: fadeUp .4s ease both; }
 </style>
-{% endblock %}
+</head>
+<body>
 
-{% block content %}
-<div class="admin-layout">
-  <aside class="admin-sidebar">
-    <div class="sb-brand">
-      <div class="sb-badge">Admin</div>
-      <div class="sb-name">{{ session.admin_name }}</div>
-      <div class="sb-role">⚙ Administrator</div>
-    </div>
-    <div class="sb-section">
-      <div class="sb-section-lbl">Overview</div>
-      <a href="/admin" class="sb-link"><span class="sl-i">📊</span> Dashboard</a>
-    </div>
-    <div class="sb-section">
-      <div class="sb-section-lbl">Manage</div>
-      <a href="/admin/orders"   class="sb-link"><span class="sl-i">📦</span> Orders</a>
-      <a href="/admin/products" class="sb-link"><span class="sl-i">🧶</span> Products</a>
-      <a href="/admin/users"    class="sb-link active"><span class="sl-i">👥</span> Customers</a>
-    </div>
-    <div class="sb-sep"></div>
-    <div class="sb-section">
-      <a href="/" target="_blank" class="sb-link"><span class="sl-i">🌐</span> View Store</a>
-      <a href="/admin/logout" class="sb-link" style="color:rgba(255,120,120,.7);"><span class="sl-i">🚪</span> Logout</a>
-    </div>
-  </aside>
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-  <main class="admin-main">
-    <div class="adm-hdr">
-      <div>
-        <div class="adm-title">Customers</div>
-        <div class="adm-sub">View and manage all registered customers</div>
+<!-- ═══ SIDEBAR (same as dashboard) ═══ -->
+<aside class="admin-sidebar" id="admin-sidebar">
+  <div class="sidebar-brand">
+    <img src="/static/images/logo.png" alt="logo" onerror="this.style.display='none'">
+    <div class="sidebar-brand-text">
+      <div class="sb-title">UrCostome Edit</div>
+      <div class="sb-sub">Admin Panel</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a href="/admin" class="nav-link"><span class="nl-icon">📊</span> Dashboard</a>
+    <a href="/admin/orders" class="nav-link"><span class="nl-icon">📦</span> Orders</a>
+    <a href="/admin/products" class="nav-link"><span class="nl-icon">🧶</span> Products</a>
+    <a href="/admin/users" class="nav-link active"><span class="nl-icon">👥</span> Users</a>
+
+    <div class="nav-section-label">Store</div>
+    <a href="/" target="_blank" class="nav-link"><span class="nl-icon">🌐</span> View Store</a>
+    <a href="/products" target="_blank" class="nav-link"><span class="nl-icon">🛍</span> Shop Page</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="nav-link" style="padding:8px 12px;gap:8px;">
+      <div style="width:30px;height:30px;border-radius:50%;background:rgba(232,119,106,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:700;flex-shrink:0;">
+        {{ session.get('admin_name', 'Admin')[0].upper() }}
       </div>
-      <a href="/admin" class="btn btn-ghost btn-sm">← Dashboard</a>
+      <div>
+        <div style="font-size:.82rem;color:#fff;font-weight:500;">{{ session.get('admin_name', 'Admin') }}</div>
+        <div style="font-size:.68rem;color:rgba(255,255,255,.4);">Administrator</div>
+      </div>
+    </div>
+    <a href="/admin/logout" class="nav-link" style="color:rgba(232,119,106,.8);">
+      <span class="nl-icon">🚪</span> Logout
+    </a>
+  </div>
+</aside>
+
+<!-- ═══ HEADER (same as dashboard) ═══ -->
+<header class="admin-header">
+  <div class="header-left">
+    <button class="hamburger-admin" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <div>
+      <div class="header-page-title">Customers</div>
+      <div class="header-breadcrumb">Admin / Customers</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="admin-user-chip">
+      <div class="auc-avatar">{{ session.get('admin_name', 'Admin')[0].upper() }}</div>
+      {{ session.get('admin_name', 'Admin') }}
+    </div>
+  </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main class="admin-main">
+  <div class="admin-content">
+
+    <!-- Title -->
+    <div class="content-header fade-in">
+      <div>
+        <h1 class="content-title">Customers</h1>
+        <p class="content-sub">View and manage all registered customers</p>
+      </div>
+      <a href="/admin" class="btn-ghost">← Dashboard</a>
     </div>
 
-    <div class="u-stats">
+    <!-- Stat cards -->
+    <div class="u-stats fade-in">
       <div class="u-stat">
         <div class="u-stat-icon" style="background:#eff6ff;">👥</div>
         <div><div class="u-stat-val">{{ users|length }}</div><div class="u-stat-lbl">Total Customers</div></div>
@@ -142,16 +314,18 @@
       </div>
     </div>
 
-    <div class="u-toolbar">
+    <!-- Toolbar -->
+    <div class="u-toolbar fade-in">
       <form method="GET" action="/admin/users" class="u-search">
         <input type="text" name="q" value="{{ search }}" placeholder="Search name, email, phone…">
         <button type="submit">🔍</button>
       </form>
-      {% if search %}<a href="/admin/users" class="btn btn-ghost btn-sm">✕ Clear</a>{% endif %}
+      {% if search %}<a href="/admin/users" class="btn-ghost">✕ Clear</a>{% endif %}
       <span class="u-count"><strong>{{ users|length }}</strong> customer{{ 's' if users|length != 1 }}</span>
     </div>
 
-    <div class="u-panel">
+    <!-- Table -->
+    <div class="u-panel fade-in">
       {% if users %}
       <div class="tbl-wrap">
         <table class="u-tbl">
@@ -203,14 +377,15 @@
         <div class="em-icon">👤</div>
         <h3>No customers found</h3>
         <p style="font-size:.84rem;">{% if search %}Try a different search term.{% else %}Nobody has registered yet.{% endif %}</p>
-        {% if search %}<a href="/admin/users" class="btn btn-ghost btn-sm" style="margin-top:14px;">Clear Search</a>{% endif %}
+        {% if search %}<a href="/admin/users" class="btn-ghost" style="margin-top:14px;display:inline-flex;">Clear Search</a>{% endif %}
       </div>
       {% endif %}
     </div>
-  </main>
-</div>
 
-<!-- USER DETAIL MODAL -->
+  </div>
+</main>
+
+<!-- USER DETAIL MODAL (unchanged) -->
 <div class="modal-backdrop" id="user-modal" onclick="if(event.target===this)closeUser()">
   <div class="modal-box">
     <h2>Customer Profile</h2>
@@ -226,14 +401,25 @@
     </div>
     <div class="mfooter">
       <button class="mf-close" onclick="closeUser()">Close</button>
-      <a id="um-orders-link" href="#" class="btn btn-primary" style="flex:2;justify-content:center;font-size:.86rem;padding:11px;">View Their Orders →</a>
+      <a id="um-orders-link" href="#" class="btn-primary">View Their Orders →</a>
     </div>
   </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
+// Sidebar toggle (same as dashboard)
+function toggleSidebar() {
+  document.getElementById('admin-sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+  document.body.style.overflow = document.getElementById('admin-sidebar').classList.contains('open') ? 'hidden' : '';
+}
+function closeSidebar() {
+  document.getElementById('admin-sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Modal (unchanged)
 function showUser(name, email, phone, joined, orders, active) {
   document.getElementById('um-av').textContent  = name[0].toUpperCase();
   document.getElementById('um-nm').textContent  = name;
@@ -253,6 +439,7 @@ function closeUser() {
   document.body.style.overflow = '';
 }
 
+// Row animations (unchanged)
 document.querySelectorAll('.u-tbl tbody tr').forEach((tr, i) => {
   tr.style.opacity = '0'; tr.style.transform = 'translateY(8px)';
   setTimeout(() => {
@@ -261,4 +448,5 @@ document.querySelectorAll('.u-tbl tbody tr').forEach((tr, i) => {
   }, 40 + i * 35);
 });
 </script>
-{% endblock %}
+</body>
+</html>

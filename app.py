@@ -807,7 +807,8 @@ def admin_users():
     q += " GROUP BY u.id ORDER BY u.id DESC"
     users = con.execute(q, params).fetchall()
     con.close()
-    return render_template("admin/users.html", users=users, search=search)
+    return render_template("admin/users.html", users=users, search=search,
+                           admin_name=session.get("admin_name","Admin"))  # ← ADD THIS
 
 @app.route("/admin/users/toggle/<int:uid>", methods=["POST"])
 @admin_required
@@ -840,6 +841,11 @@ def api_product(pid):
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html"), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    import traceback
+    return f"<pre>{traceback.format_exc()}</pre>", 500
 
 # ── CHANGE 1: init_db() now runs at module load (gunicorn picks this up) ────
 with app.app_context():
