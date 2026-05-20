@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Manage Customers — Admin{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-layout{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - var(--nav-h));}
+.admin-sidebar{background:var(--brown-d);padding:24px 0;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto;z-index:10;}
+.admin-sidebar::-webkit-scrollbar{width:3px;}
+.sb-brand{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px;}
+.sb-badge{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);font-weight:700;margin-bottom:3px;}
+.sb-name{font-family:'Playfair Display',serif;font-size:1rem;color:#fff;}
+.sb-role{font-size:.72rem;color:var(--rose);font-weight:600;margin-top:2px;}
+.sb-section{padding:0 10px 4px;}
+.sb-section-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.22);font-weight:700;padding:10px 10px 5px;}
+.sb-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:.84rem;color:rgba(255,255,255,.6);text-decoration:none;transition:all .2s;margin-bottom:2px;}
+.sb-link:hover{background:rgba(255,255,255,.08);color:#fff;}
+.sb-link.active{background:var(--rose);color:#fff;}
+.sb-link .sl-i{font-size:.95rem;width:18px;text-align:center;flex-shrink:0;}
+.sb-sep{height:1px;background:rgba(255,255,255,.07);margin:10px 10px;}
+.admin-main{padding:32px clamp(14px,3vw,36px);background:#f8f4f1;}
+.adm-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+.adm-title{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,2.5vw,1.9rem);color:var(--brown);}
+.adm-sub{font-size:.82rem;color:var(--muted);margin-top:2px;}
+
+.u-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:22px;}
+.u-stat{background:#fff;border:1px solid var(--border);border-radius:var(--r-l);padding:18px 16px;display:flex;align-items:center;gap:12px;}
+.u-stat-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+.u-stat-val{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--brown);line-height:1;}
+.u-stat-lbl{font-size:.72rem;color:var(--muted);margin-top:2px;}
+
+.u-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.u-search{display:flex;background:#fff;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;flex:1;max-width:320px;transition:border-color .2s;}
+.u-search:focus-within{border-color:var(--rose);}
+.u-search input{flex:1;padding:9px 13px;border:none;outline:none;font-size:.86rem;font-family:'DM Sans',sans-serif;color:var(--text);background:transparent;}
+.u-search button{padding:0 13px;background:var(--rose);color:#fff;border:none;cursor:pointer;font-size:.9rem;}
+.u-count{font-size:.83rem;color:var(--muted);margin-left:auto;}
+.u-count strong{color:var(--brown);}
+
+.u-panel{background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;box-shadow:0 1px 6px rgba(92,61,46,.06);}
+.tbl-wrap{overflow-x:auto;}
+.u-tbl{width:100%;border-collapse:collapse;font-size:.83rem;}
+.u-tbl th{text-align:left;padding:10px 14px;font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--warm);border-bottom:1px solid var(--border);white-space:nowrap;}
+.u-tbl td{padding:14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.u-tbl tr:last-child td{border-bottom:none;}
+.u-tbl tr:hover td{background:#fdfaf8;}
+
+.u-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--rose),var(--rose-d));color:#fff;font-size:.82rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.u-info-cell{display:flex;align-items:center;gap:10px;}
+.u-name{font-weight:600;color:var(--brown);}
+.u-email{font-size:.76rem;color:var(--muted);}
+.u-joined{font-size:.76rem;color:var(--muted);white-space:nowrap;}
+.u-orders{font-weight:700;color:var(--brown);text-align:center;}
+
+.u-status{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.us-active{background:#f0fdf4;color:#166534;}
+.us-inactive{background:#f4f4f5;color:#71717a;}
+.us-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+.u-act-btn{padding:5px 10px;border-radius:7px;font-size:.73rem;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none;display:inline-block;margin-right:4px;}
+.uab-view{background:var(--warm);color:var(--brown);}
+.uab-view:hover{background:var(--border);}
+.uab-off{background:#fff1f2;color:#9f1239;}
+.uab-off:hover{background:#fecdd3;}
+.uab-on{background:#f0fdf4;color:#166534;}
+.uab-on:hover{background:#dcfce7;}
+
+.modal-backdrop{display:none;position:fixed;inset:0;z-index:1200;background:rgba(42,26,18,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;}
+.modal-backdrop.open{display:flex;}
+.modal-box{background:#fff;border-radius:var(--r-xl);padding:32px;width:100%;max-width:500px;box-shadow:0 30px 80px rgba(42,26,18,.2);animation:fadeUp .3s ease;max-height:90vh;overflow-y:auto;}
+.modal-box h2{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--brown);margin-bottom:18px;}
+.um-header{display:flex;align-items:center;gap:14px;padding:16px;background:var(--warm);border-radius:var(--r-l);margin-bottom:18px;}
+.um-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--rose),var(--rose-d));color:#fff;font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.um-nm{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--brown);}
+.um-em{font-size:.8rem;color:var(--muted);}
+.ud-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.ud-b{background:var(--cream);border-radius:var(--r-m);padding:11px 13px;}
+.ud-l{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:2px;}
+.ud-v{font-size:.86rem;color:var(--brown);font-weight:500;}
+.mfooter{display:flex;gap:10px;margin-top:18px;}
+.mf-close{flex:1;padding:11px;background:var(--warm);border:none;border-radius:10px;font-size:.86rem;font-weight:600;color:var(--muted);cursor:pointer;}
+.mf-close:hover{background:var(--border);}
+
+.tbl-empty{text-align:center;padding:56px 20px;color:var(--muted);}
+.tbl-empty .em-icon{font-size:2.8rem;margin-bottom:12px;}
+.tbl-empty h3{font-family:'Playfair Display',serif;color:var(--brown);font-size:1.1rem;margin-bottom:6px;}
+
+@media(max-width:1000px){.admin-layout{grid-template-columns:1fr;}.admin-sidebar{display:none;}}
+@media(max-width:600px){.ud-grid{grid-template-columns:1fr;}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <div class="sb-brand">
+      <div class="sb-badge">Admin</div>
+      <div class="sb-name">{{ session.admin_name }}</div>
+      <div class="sb-role">⚙ Administrator</div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-lbl">Overview</div>
+      <a href="/admin" class="sb-link"><span class="sl-i">📊</span> Dashboard</a>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-lbl">Manage</div>
+      <a href="/admin/orders"   class="sb-link"><span class="sl-i">📦</span> Orders</a>
+      <a href="/admin/products" class="sb-link"><span class="sl-i">🧶</span> Products</a>
+      <a href="/admin/users"    class="sb-link active"><span class="sl-i">👥</span> Customers</a>
+    </div>
+    <div class="sb-sep"></div>
+    <div class="sb-section">
+      <a href="/" target="_blank" class="sb-link"><span class="sl-i">🌐</span> View Store</a>
+      <a href="/admin/logout" class="sb-link" style="color:rgba(255,120,120,.7);"><span class="sl-i">🚪</span> Logout</a>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <div class="adm-hdr">
+      <div>
+        <div class="adm-title">Customers</div>
+        <div class="adm-sub">View and manage all registered customers</div>
+      </div>
+      <a href="/admin" class="btn btn-ghost btn-sm">← Dashboard</a>
+    </div>
+
+    <div class="u-stats">
+      <div class="u-stat">
+        <div class="u-stat-icon" style="background:#eff6ff;">👥</div>
+        <div><div class="u-stat-val">{{ users|length }}</div><div class="u-stat-lbl">Total Customers</div></div>
+      </div>
+      <div class="u-stat">
+        <div class="u-stat-icon" style="background:#f0fdf4;">✅</div>
+        <div><div class="u-stat-val">{{ users|selectattr('is_active','equalto',1)|list|length }}</div><div class="u-stat-lbl">Active</div></div>
+      </div>
+      <div class="u-stat">
+        <div class="u-stat-icon" style="background:#fff1f2;">🚫</div>
+        <div><div class="u-stat-val">{{ users|selectattr('is_active','equalto',0)|list|length }}</div><div class="u-stat-lbl">Disabled</div></div>
+      </div>
+      <div class="u-stat">
+        <div class="u-stat-icon" style="background:var(--rose-l);">📦</div>
+        <div><div class="u-stat-val">{{ users|sum(attribute='order_count') }}</div><div class="u-stat-lbl">Total Orders</div></div>
+      </div>
+    </div>
+
+    <div class="u-toolbar">
+      <form method="GET" action="/admin/users" class="u-search">
+        <input type="text" name="q" value="{{ search }}" placeholder="Search name, email, phone…">
+        <button type="submit">🔍</button>
+      </form>
+      {% if search %}<a href="/admin/users" class="btn btn-ghost btn-sm">✕ Clear</a>{% endif %}
+      <span class="u-count"><strong>{{ users|length }}</strong> customer{{ 's' if users|length != 1 }}</span>
+    </div>
+
+    <div class="u-panel">
+      {% if users %}
+      <div class="tbl-wrap">
+        <table class="u-tbl">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Joined</th>
+              <th style="text-align:center;">Orders</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>
+                <div class="u-info-cell">
+                  <div class="u-avatar">{{ u.name[0].upper() }}</div>
+                  <div><div class="u-name">{{ u.name }}</div><div class="u-email">{{ u.email }}</div></div>
+                </div>
+              </td>
+              <td style="font-size:.82rem;">{{ u.phone or '—' }}</td>
+              <td class="u-joined">{{ u.created_at[:10] }}</td>
+              <td class="u-orders">{{ u.order_count }}</td>
+              <td>
+                <span class="u-status {% if u.is_active %}us-active{% else %}us-inactive{% endif %}">
+                  <span class="us-dot"></span>{{ 'Active' if u.is_active else 'Disabled' }}
+                </span>
+              </td>
+              <td>
+                <button class="u-act-btn uab-view"
+                  onclick="showUser('{{ u.name|replace("'","\\'")|replace('"','&quot;') }}','{{ u.email }}','{{ u.phone or "" }}','{{ u.created_at[:10] }}',{{ u.order_count }},{{ u.is_active }})">
+                  👤 View
+                </button>
+                <form method="POST" action="/admin/users/toggle/{{ u.id }}" style="display:inline;">
+                  <button type="submit" class="u-act-btn {% if u.is_active %}uab-off{% else %}uab-on{% endif %}">
+                    {% if u.is_active %}🚫 Disable{% else %}✅ Enable{% endif %}
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="tbl-empty">
+        <div class="em-icon">👤</div>
+        <h3>No customers found</h3>
+        <p style="font-size:.84rem;">{% if search %}Try a different search term.{% else %}Nobody has registered yet.{% endif %}</p>
+        {% if search %}<a href="/admin/users" class="btn btn-ghost btn-sm" style="margin-top:14px;">Clear Search</a>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </main>
+</div>
+
+<!-- USER DETAIL MODAL -->
+<div class="modal-backdrop" id="user-modal" onclick="if(event.target===this)closeUser()">
+  <div class="modal-box">
+    <h2>Customer Profile</h2>
+    <div class="um-header">
+      <div class="um-av" id="um-av"></div>
+      <div><div class="um-nm" id="um-nm"></div><div class="um-em" id="um-em"></div></div>
+    </div>
+    <div class="ud-grid">
+      <div class="ud-b"><div class="ud-l">Phone</div><div class="ud-v" id="um-ph"></div></div>
+      <div class="ud-b"><div class="ud-l">Member Since</div><div class="ud-v" id="um-jn"></div></div>
+      <div class="ud-b"><div class="ud-l">Total Orders</div><div class="ud-v" id="um-oc"></div></div>
+      <div class="ud-b"><div class="ud-l">Account Status</div><div class="ud-v" id="um-st"></div></div>
+    </div>
+    <div class="mfooter">
+      <button class="mf-close" onclick="closeUser()">Close</button>
+      <a id="um-orders-link" href="#" class="btn btn-primary" style="flex:2;justify-content:center;font-size:.86rem;padding:11px;">View Their Orders →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showUser(name, email, phone, joined, orders, active) {
+  document.getElementById('um-av').textContent  = name[0].toUpperCase();
+  document.getElementById('um-nm').textContent  = name;
+  document.getElementById('um-em').textContent  = email;
+  document.getElementById('um-ph').textContent  = phone || 'Not provided';
+  document.getElementById('um-jn').textContent  = joined;
+  document.getElementById('um-oc').textContent  = orders + ' order' + (orders !== 1 ? 's' : '');
+  document.getElementById('um-st').innerHTML    = active
+    ? '<span style="color:#16a34a;font-weight:700;">✅ Active</span>'
+    : '<span style="color:#9f1239;font-weight:700;">🚫 Disabled</span>';
+  document.getElementById('um-orders-link').href = '/admin/orders?q=' + encodeURIComponent(name);
+  document.getElementById('user-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeUser() {
+  document.getElementById('user-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.querySelectorAll('.u-tbl tbody tr').forEach((tr, i) => {
+  tr.style.opacity = '0'; tr.style.transform = 'translateY(8px)';
+  setTimeout(() => {
+    tr.style.transition = 'opacity .3s ease, transform .3s ease';
+    tr.style.opacity = '1'; tr.style.transform = 'translateY(0)';
+  }, 40 + i * 35);
+});
+</script>
+{% endblock %}

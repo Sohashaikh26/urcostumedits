@@ -841,6 +841,10 @@ def api_product(pid):
 def page_not_found(e):
     return render_template("404.html"), 404
 
-if __name__ == "__main__":
+# ── CHANGE 1: init_db() now runs at module load (gunicorn picks this up) ────
+with app.app_context():
     init_db()
-    app.run(debug=True)
+
+# ── CHANGE 2: debug=False for production ────────────────────────────────────
+if __name__ == "__main__":
+    app.run(debug=False)
